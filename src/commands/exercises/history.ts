@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {closeDb, openDb} from '../../lib/db.js'
-import {printJson, renderTable} from '../../lib/output.js'
+import {renderTable} from '../../lib/output.js'
 import {getExerciseHistoryRows, resolveExerciseSelector} from '../../lib/repositories/exercises.js'
 
 export default class ExercisesHistory extends Command {
@@ -9,9 +9,9 @@ export default class ExercisesHistory extends Command {
     selector: Args.string({description: 'exercise id or name', required: true}),
   }
 static description = 'Show exercise history rows'
+static enableJsonFlag = true
 static flags = {
     from: Flags.string({description: 'Start date YYYY-MM-DD'}),
-    json: Flags.boolean({description: 'Output JSON'}),
     limit: Flags.integer({default: 100, description: 'Limit rows'}),
     'max-reps': Flags.integer({description: 'Maximum top reps'}),
     'max-weight': Flags.integer({description: 'Maximum top weight'}),
@@ -22,7 +22,7 @@ static flags = {
     to: Flags.string({description: 'End date YYYY-MM-DD'}),
   }
 
-  async run(): Promise<void> {
+  async run(): Promise<void | {data: unknown}> {
     const {args, flags} = await this.parse(ExercisesHistory)
     const context = openDb()
 
@@ -40,10 +40,7 @@ static flags = {
         to: flags.to,
       })
 
-      if (flags.json) {
-        printJson(this.log.bind(this), {data: rows})
-        return
-      }
+      if (this.jsonEnabled()) return {data: rows}
 
       this.log(
         renderTable(

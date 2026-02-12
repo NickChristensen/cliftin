@@ -80,7 +80,3 @@ export function renderTable(rows: Array<Record<string, unknown>>): string {
     width: 'auto',
   }).render()
 }
-
-export function printJson(log: (line: string) => void, value: unknown): void {
-  log(JSON.stringify(value, null, 2))
-}

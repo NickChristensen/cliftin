@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {closeDb, openDb} from '../lib/db.js'
-import {printJson, renderTable} from '../lib/output.js'
+import {renderTable} from '../lib/output.js'
 import {getWorkoutDetail, listWorkouts} from '../lib/repositories/workouts.js'
 
 export default class Workouts extends Command {
@@ -9,9 +9,9 @@ export default class Workouts extends Command {
     workoutId: Args.string({description: 'workout id', required: false}),
   }
 static description = 'List workouts, or show one workout with exercises and sets'
+static enableJsonFlag = true
 static flags = {
     from: Flags.string({description: 'Start date YYYY-MM-DD'}),
-    json: Flags.boolean({description: 'Output JSON'}),
     limit: Flags.integer({default: 25, description: 'Limit rows'}),
     on: Flags.string({description: 'Single date YYYY-MM-DD'}),
     program: Flags.string({description: 'Filter by program id or name'}),
@@ -19,7 +19,7 @@ static flags = {
     to: Flags.string({description: 'End date YYYY-MM-DD'}),
   }
 
-  async run(): Promise<void> {
+  async run(): Promise<void | {data: unknown}> {
     const {args, flags} = await this.parse(Workouts)
     const context = openDb()
 
@@ -34,10 +34,7 @@ static flags = {
           to: flags.to,
         })
 
-        if (flags.json) {
-          printJson(this.log.bind(this), {data: workouts})
-          return
-        }
+        if (this.jsonEnabled()) return {data: workouts}
 
         this.log(
           renderTable(
@@ -59,10 +56,7 @@ static flags = {
 
       const detail = await getWorkoutDetail(context.db, Number(args.workoutId))
 
-      if (flags.json) {
-        printJson(this.log.bind(this), {data: detail})
-        return
-      }
+      if (this.jsonEnabled()) return {data: detail}
 
       this.log(`Workout ${detail.id}`)
       this.log(`Date: ${detail.date ?? 'n/a'}`)

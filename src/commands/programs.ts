@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {closeDb, openDb} from '../lib/db.js'
-import {printJson, renderTable} from '../lib/output.js'
+import {renderTable} from '../lib/output.js'
 import {getProgramDetail, listPrograms, resolveProgramSelector} from '../lib/repositories/programs.js'
 
 export default class Programs extends Command {
@@ -9,6 +9,7 @@ export default class Programs extends Command {
     selector: Args.string({description: 'program id or name', required: false}),
   }
 static description = 'List programs, or show one program hierarchy'
+static enableJsonFlag = true
 static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --active',
@@ -17,10 +18,9 @@ static examples = [
 static flags = {
     active: Flags.boolean({description: 'Show active program detail'}),
     current: Flags.boolean({description: 'Alias for --active'}),
-    json: Flags.boolean({description: 'Output JSON'}),
   }
 
-  async run(): Promise<void> {
+  async run(): Promise<void | {data: unknown}> {
     const {args, flags} = await this.parse(Programs)
     const context = openDb()
 
@@ -34,10 +34,7 @@ static flags = {
       if (!args.selector && !useActive) {
         const programs = await listPrograms(context.db)
 
-        if (flags.json) {
-          printJson(this.log.bind(this), {data: programs})
-          return
-        }
+        if (this.jsonEnabled()) return {data: programs}
 
         this.log(
           renderTable(
@@ -57,10 +54,7 @@ static flags = {
       const programId = await resolveProgramSelector(context.db, args.selector, Boolean(useActive))
       const detail = await getProgramDetail(context.db, programId)
 
-      if (flags.json) {
-        printJson(this.log.bind(this), {data: detail})
-        return
-      }
+      if (this.jsonEnabled()) return {data: detail}
 
       this.log(`Program ${detail.program.id}: ${detail.program.name}`)
       this.log(`Active: ${detail.program.isActive}  Template: ${detail.program.isTemplate}`)

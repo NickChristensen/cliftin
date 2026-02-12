@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {closeDb, openDb} from '../../lib/db.js'
-import {printJson, renderTable} from '../../lib/output.js'
+import {renderTable} from '../../lib/output.js'
 import {getExerciseDetail, listExercises, resolveExerciseSelector} from '../../lib/repositories/exercises.js'
 
 export default class Exercises extends Command {
@@ -9,15 +9,15 @@ export default class Exercises extends Command {
     selector: Args.string({description: 'exercise id or name', required: false}),
   }
 static description = 'List exercises, or show one exercise detail'
+static enableJsonFlag = true
 static flags = {
     equipment: Flags.string({description: 'Filter by equipment name'}),
     'include-deleted': Flags.boolean({default: false, description: 'Include soft-deleted exercises'}),
-    json: Flags.boolean({description: 'Output JSON'}),
     muscle: Flags.string({description: 'Filter by primary muscle'}),
     name: Flags.string({description: 'Filter by name contains'}),
   }
 
-  async run(): Promise<void> {
+  async run(): Promise<void | {data: unknown}> {
     const {args, flags} = await this.parse(Exercises)
     const context = openDb()
 
@@ -30,10 +30,7 @@ static flags = {
           name: flags.name,
         })
 
-        if (flags.json) {
-          printJson(this.log.bind(this), {data: exercises})
-          return
-        }
+        if (this.jsonEnabled()) return {data: exercises}
 
         this.log(
           renderTable(
@@ -53,10 +50,7 @@ static flags = {
       const exerciseId = await resolveExerciseSelector(context.db, args.selector)
       const detail = await getExerciseDetail(context.db, exerciseId)
 
-      if (flags.json) {
-        printJson(this.log.bind(this), {data: detail})
-        return
-      }
+      if (this.jsonEnabled()) return {data: detail}
 
       this.log(`Exercise ${detail.id}: ${detail.name ?? '(unnamed)'}`)
       this.log(`Primary muscles: ${detail.primaryMuscles ?? 'n/a'}`)
