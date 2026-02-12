@@ -105,15 +105,17 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
     .execute()
 
   const routines = await db
-    .selectFrom('ZROUTINE')
-    .select(['Z_PK as id', 'ZNAME as name', 'ZPERIOD as weekId'])
-    .where('ZWORKOUTPLAN', '=', programId)
-    .where('ZSOFTDELETED', 'is not', 1)
-    .orderBy('Z_PK', 'asc')
+    .selectFrom('ZROUTINE as r')
+    .leftJoin('ZPERIOD as p', 'p.Z_PK', 'r.ZPERIOD')
+    .select(['r.Z_PK as id', 'r.ZNAME as name', 'r.ZPERIOD as weekId'])
+    .where((eb) => eb.or([eb('p.ZWORKOUTPLAN', '=', programId), eb('r.ZWORKOUTPLAN', '=', programId)]))
+    .where('r.ZSOFTDELETED', 'is not', 1)
+    .orderBy('r.Z_PK', 'asc')
     .execute()
 
   const exercises = await db
     .selectFrom('ZROUTINE as r')
+    .leftJoin('ZPERIOD as p', 'p.Z_PK', 'r.ZPERIOD')
     .leftJoin('Z_12ROUTINES as j', 'j.Z_28ROUTINES', 'r.Z_PK')
     .leftJoin('ZEXERCISECONFIGURATION as ec', 'ec.Z_PK', 'j.Z_12EXERCISES')
     .leftJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'ec.ZINFORMATION')
@@ -127,7 +129,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       'ei.Z_PK as exerciseId',
       'ei.ZNAME as exerciseName',
     ])
-    .where('r.ZWORKOUTPLAN', '=', programId)
+    .where((eb) => eb.or([eb('p.ZWORKOUTPLAN', '=', programId), eb('r.ZWORKOUTPLAN', '=', programId)]))
     .where('r.ZSOFTDELETED', 'is not', 1)
     .where('ec.Z_PK', 'is not', null)
     .orderBy('r.Z_PK', 'asc')
