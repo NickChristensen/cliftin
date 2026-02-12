@@ -12,7 +12,7 @@ export function createTestDb(): string {
 create table ZWORKOUTPLAN (Z_PK integer primary key, ZNAME text, ZISCURRENT integer, ZISTEMPLATE integer, ZSOFTDELETED integer, ZDATEADDED real, ZID blob);
 create table ZWORKOUTPROGRAMSINFO (Z_PK integer primary key, ZSECONDARYWORKOUTPROGRAMID blob, ZSELECTEDWORKOUTPROGRAMID blob);
 create table ZPERIOD (Z_PK integer primary key, ZWORKOUTPLAN integer, Z_FOK_WORKOUTPLAN integer);
-create table ZROUTINE (Z_PK integer primary key, ZNAME text, ZSOFTDELETED integer, ZPERIOD integer, ZWORKOUTPLAN integer);
+create table ZROUTINE (Z_PK integer primary key, ZNAME text, ZSOFTDELETED integer, ZPERIOD integer, ZWORKOUTPLAN integer, Z_FOK_PERIOD integer);
 create table Z_12ROUTINES (Z_12EXERCISES integer, Z_28ROUTINES integer, primary key (Z_12EXERCISES, Z_28ROUTINES));
 create table ZEXERCISECONFIGURATION (Z_PK integer primary key, ZINFORMATION integer, ZREPS integer, ZSETS integer, ZWEIGHT real, ZTIME integer);
 create table ZSETCONFIGURATION (Z_PK integer primary key, ZEXERCISECONFIGURATION integer, ZSETINDEX integer, ZREPS integer, ZWEIGHT real, ZTIME integer, ZRPE integer);
@@ -28,8 +28,8 @@ insert into ZWORKOUTPLAN values (1, 'Active Program', 0, 0, 0, 700000000, X'AA11
 insert into ZWORKOUTPLAN values (2, 'Old Program', 1, 0, 0, 690000000, X'BB22');
 insert into ZWORKOUTPROGRAMSINFO values (1, null, X'AA11');
 insert into ZPERIOD values (10, 1, 100);
-insert into ZROUTINE values (100, 'Day A', 0, 10, 1);
-insert into ZROUTINE values (101, 'Day B', 0, 10, 1);
+insert into ZROUTINE values (100, 'Day A', 0, 10, 1, 100);
+insert into ZROUTINE values (101, 'Day B', 0, 10, 1, 200);
 insert into ZEQUIPMENT2 values (1, 'barbell');
 insert into ZEXERCISEINFORMATION values (1000, 'squat', 'legs', 'glutes', 1, 0, 1, 0, 'maxWeight', 'rpe');
 insert into ZEXERCISEINFORMATION values (1001, 'bench_press', 'chest', 'triceps', 1, 0, 1, 0, 'maxWeight', 'rpe');

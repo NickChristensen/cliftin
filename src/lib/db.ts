@@ -52,6 +52,7 @@ export interface DatabaseSchema {
     ZWORKOUTPLAN: null | number
   }
   ZROUTINE: {
+    Z_FOK_PERIOD: null | number
     Z_PK: number
     ZNAME: null | string
     ZPERIOD: null | number

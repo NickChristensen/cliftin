@@ -112,6 +112,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
     .select(['r.Z_PK as id', 'r.ZNAME as name', 'r.ZPERIOD as weekId'])
     .where((eb) => eb.or([eb('p.ZWORKOUTPLAN', '=', programId), eb('r.ZWORKOUTPLAN', '=', programId)]))
     .where('r.ZSOFTDELETED', 'is not', 1)
+    .orderBy('r.Z_FOK_PERIOD', 'asc')
     .orderBy('r.Z_PK', 'asc')
     .execute()
 
