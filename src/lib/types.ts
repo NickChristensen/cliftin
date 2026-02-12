@@ -7,7 +7,6 @@ export type ProgramSummary = {
   dateAdded: null | string
   id: number
   isActive: boolean
-  isDeleted: boolean
   isTemplate: boolean
   name: string
 }

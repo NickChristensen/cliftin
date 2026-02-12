@@ -44,7 +44,6 @@ static flags = {
               dateAdded: program.dateAdded,
               id: program.id,
               isActive: program.isActive,
-              isDeleted: program.isDeleted,
               isTemplate: program.isTemplate,
               name: program.name,
             })),

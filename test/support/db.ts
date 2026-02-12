@@ -27,6 +27,7 @@ create table ZSETTINGS (ZMEASURMENTUNIT text);
   db.exec(`
 insert into ZWORKOUTPLAN values (1, 'Active Program', 0, 0, 0, 700000000, X'AA11');
 insert into ZWORKOUTPLAN values (2, 'Old Program', 1, 0, 0, 690000000, X'BB22');
+insert into ZWORKOUTPLAN values (3, 'Deleted Program', 0, 0, 1, 680000000, X'CC33');
 insert into ZWORKOUTPROGRAMSINFO values (1, null, X'AA11');
 insert into ZPERIOD values (10, 1, 100);
 insert into ZROUTINE values (100, 'Day A', 0, 10, 1, 100);

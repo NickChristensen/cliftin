@@ -26,9 +26,9 @@ export async function listPrograms(db: Kysely<DatabaseSchema>): Promise<ProgramS
       'ZNAME as name',
       'ZISCURRENT as isActive',
       'ZISTEMPLATE as isTemplate',
-      'ZSOFTDELETED as isDeleted',
       'ZDATEADDED as dateAdded',
     ])
+    .where('ZSOFTDELETED', 'is not', 1)
     .orderBy('ZDATEADDED', 'desc')
     .execute()
 
@@ -36,7 +36,6 @@ export async function listPrograms(db: Kysely<DatabaseSchema>): Promise<ProgramS
     dateAdded: appleSecondsToIso(row.dateAdded),
     id: row.id,
     isActive: selectedProgram ? row.id === selectedProgram.id : asBool(row.isActive),
-    isDeleted: asBool(row.isDeleted),
     isTemplate: asBool(row.isTemplate),
     name: row.name ?? '(unnamed)',
   }))
@@ -73,7 +72,18 @@ export async function resolveProgramSelector(
   }
 
   if (!selector) throw new Error('Program selector is required unless --active/--current is set.')
-  return resolveIdOrName(db, 'ZWORKOUTPLAN', selector)
+
+  const programId = await resolveIdOrName(db, 'ZWORKOUTPLAN', selector)
+  const nonDeleted = await db
+    .selectFrom('ZWORKOUTPLAN')
+    .select('Z_PK as id')
+    .where('Z_PK', '=', programId)
+    .where('ZSOFTDELETED', 'is not', 1)
+    .executeTakeFirst()
+
+  if (!nonDeleted) throw new Error(`Program ${programId} is soft-deleted and hidden from CLI output.`)
+
+  return programId
 }
 
 export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: number): Promise<ProgramDetailTree> {
@@ -93,10 +103,10 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       'ZNAME as name',
       'ZISCURRENT as isActive',
       'ZISTEMPLATE as isTemplate',
-      'ZSOFTDELETED as isDeleted',
       'ZDATEADDED as dateAdded',
     ])
     .where('Z_PK', '=', programId)
+    .where('ZSOFTDELETED', 'is not', 1)
     .executeTakeFirst()
 
   if (!programRow) throw new Error(`Program not found: ${programId}`)
@@ -234,7 +244,6 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       dateAdded: appleSecondsToIso(programRow.dateAdded),
       id: programRow.id,
       isActive: selectedProgram ? programRow.id === selectedProgram.id : asBool(programRow.isActive),
-      isDeleted: asBool(programRow.isDeleted),
       isTemplate: asBool(programRow.isTemplate),
       name: programRow.name ?? '(unnamed)',
     },

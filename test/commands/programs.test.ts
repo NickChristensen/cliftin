@@ -16,7 +16,9 @@ describe('programs', () => {
     const names = payload.data.map((item: {name: string}) => item.name)
 
     expect(names).to.include('Active Program')
+    expect(names).to.not.include('Deleted Program')
     expect(payload.data[0]).to.have.property('isActive')
+    expect(payload.data[0]).to.not.have.property('isDeleted')
   })
 
   it('uses --active for detail mode', async () => {
