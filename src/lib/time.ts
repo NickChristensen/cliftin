@@ -1,3 +1,5 @@
+import {endOfDay, formatISO, isAfter, isValid, parse, startOfDay} from 'date-fns'
+
 const APPLE_EPOCH_UNIX_OFFSET_SECONDS = 978_307_200
 
 export type DateFilterInput = {
@@ -9,21 +11,25 @@ export type DateFilterInput = {
 export function appleSecondsToIso(value: null | number): null | string {
   if (value === null || value === undefined) return null
 
-  const unixMilliseconds = (value + APPLE_EPOCH_UNIX_OFFSET_SECONDS) * 1000
-  return new Date(unixMilliseconds).toISOString()
+  return formatISO(appleSecondsToDate(value))
 }
 
 function parseLocalDate(value: string): Date {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-  if (!match) {
+  const date = parse(value, 'yyyy-MM-dd', new Date())
+  if (!isValid(date)) {
     throw new Error(`Invalid date format: ${value}. Use YYYY-MM-DD.`)
   }
 
-  const [, yearText, monthText, dayText] = match
-  const year = Number(yearText)
-  const month = Number(monthText) - 1
-  const day = Number(dayText)
-  return new Date(year, month, day)
+  // Guard against partial parse behavior; require exact YYYY-MM-DD roundtrip.
+  if (formatISO(date, {representation: 'date'}) !== value) {
+    throw new Error(`Invalid date format: ${value}. Use YYYY-MM-DD.`)
+  }
+
+  return date
+}
+
+function appleSecondsToDate(value: number): Date {
+  return new Date((value + APPLE_EPOCH_UNIX_OFFSET_SECONDS) * 1000)
 }
 
 function dateToAppleSeconds(date: Date): number {
@@ -32,9 +38,8 @@ function dateToAppleSeconds(date: Date): number {
 
 export function dateRangeToAppleSeconds(input: DateFilterInput): {from?: number; to?: number} {
   if (input.on) {
-    const start = parseLocalDate(input.on)
-    const end = new Date(start)
-    end.setHours(23, 59, 59, 999)
+    const start = startOfDay(parseLocalDate(input.on))
+    const end = endOfDay(start)
 
     return {
       from: dateToAppleSeconds(start),
@@ -45,17 +50,20 @@ export function dateRangeToAppleSeconds(input: DateFilterInput): {from?: number;
   const output: {from?: number; to?: number} = {}
 
   if (input.from) {
-    const start = parseLocalDate(input.from)
+    const start = startOfDay(parseLocalDate(input.from))
     output.from = dateToAppleSeconds(start)
   }
 
   if (input.to) {
-    const end = parseLocalDate(input.to)
-    end.setHours(23, 59, 59, 999)
+    const end = endOfDay(parseLocalDate(input.to))
     output.to = dateToAppleSeconds(end)
   }
 
-  if (output.from !== undefined && output.to !== undefined && output.from > output.to) {
+  if (
+    output.from !== undefined &&
+    output.to !== undefined &&
+    isAfter(appleSecondsToDate(output.from), appleSecondsToDate(output.to))
+  ) {
     throw new Error('Invalid date range: --from must be before or equal to --to.')
   }
 

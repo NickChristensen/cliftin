@@ -11,9 +11,12 @@ describe('programs', () => {
   })
 
   it('lists programs', async () => {
-    const {stdout} = await runCommand('programs')
-    expect(stdout).to.contain('Active Program')
-    expect(stdout).to.contain('isActive')
+    const {stdout} = await runCommand('programs --json')
+    const payload = JSON.parse(stdout)
+    const names = payload.data.map((item: {name: string}) => item.name)
+
+    expect(names).to.include('Active Program')
+    expect(payload.data[0]).to.have.property('isActive')
   })
 
   it('uses --active for detail mode', async () => {

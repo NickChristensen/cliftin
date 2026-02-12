@@ -12,8 +12,10 @@
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
     "better-sqlite3": "^12.6.2",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.4",
-    "kysely": "^0.28.11"
+    "kysely": "^0.28.11",
+    "tty-table": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
