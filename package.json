@@ -10,15 +10,19 @@
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
-    "@oclif/plugin-plugins": "^5"
+    "@oclif/plugin-plugins": "^5",
+    "better-sqlite3": "^12.6.2",
+    "dotenv": "^17.2.4",
+    "kysely": "^0.28.11"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
     "@oclif/prettier-config": "^0.2.1",
     "@oclif/test": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/chai": "^4",
     "@types/mocha": "^10",
-    "@types/node": "^18",
+    "@types/node": "^24.10.13",
     "chai": "^4",
     "eslint": "^9",
     "eslint-config-oclif": "^6",
@@ -54,8 +58,14 @@
     ],
     "topicSeparator": " ",
     "topics": {
-      "hello": {
-        "description": "Say hello to the world and others"
+      "exercises": {
+        "description": "Exercise catalog and performance"
+      },
+      "programs": {
+        "description": "Program hierarchy and planning"
+      },
+      "workouts": {
+        "description": "Workout history and detail"
       }
     }
   },
