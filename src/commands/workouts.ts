@@ -1,8 +1,10 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {closeDb, openDb} from '../lib/db.js'
+import {serializeWorkoutDetailWithWeightUnits} from '../lib/json-weight.js'
 import {renderTable} from '../lib/output.js'
 import {getWorkoutDetail, listWorkouts} from '../lib/repositories/workouts.js'
+import {resolveGlobalWeightUnit, weightUnitLabel} from '../lib/units.js'
 
 export default class Workouts extends Command {
   static args = {
@@ -55,8 +57,12 @@ static flags = {
       }
 
       const detail = await getWorkoutDetail(context.db, Number(args.workoutId))
+      const unitPreference = await resolveGlobalWeightUnit(context.db)
+      const unitLabel = weightUnitLabel(unitPreference)
 
-      if (this.jsonEnabled()) return {data: detail}
+      if (this.jsonEnabled()) {
+        return {data: serializeWorkoutDetailWithWeightUnits(detail, unitPreference)}
+      }
 
       this.log(`Workout ${detail.id}`)
       this.log(`Date: ${detail.date ?? 'n/a'}`)
@@ -75,7 +81,7 @@ static flags = {
               rpe: set.rpe,
               timeSeconds: set.timeSeconds,
               volume: set.volume,
-              weight: set.weight,
+              weight: set.weight === null ? null : `${set.weight} ${unitLabel}`,
             })),
           )
             .split('\n')

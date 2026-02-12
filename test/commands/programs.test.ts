@@ -23,6 +23,7 @@ describe('programs', () => {
     const {stdout} = await runCommand('programs --active')
     expect(stdout).to.contain('Program 1: Active Program')
     expect(stdout).to.contain('Week 10')
+    expect(stdout).to.contain('220 lb')
   })
 
   it('supports --current alias', async () => {
@@ -43,9 +44,9 @@ describe('programs', () => {
     const payload = JSON.parse(stdout)
     const firstExercise = payload.data.weeks[0].routines[0].exercises[0]
 
-    expect(firstExercise.plannedWeight).to.equal(220)
-    expect(firstExercise.sets[0].weight).to.equal(220)
-    expect(firstExercise.sets[1].weight).to.equal(225.5)
+    expect(firstExercise.plannedWeight).to.deep.equal({unit: 'lb', value: 220})
+    expect(firstExercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 220})
+    expect(firstExercise.sets[1].weight).to.deep.equal({unit: 'lb', value: 225.5})
   })
 
   it('errors when selector does not exist', async () => {

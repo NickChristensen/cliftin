@@ -1,8 +1,10 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {closeDb, openDb} from '../../lib/db.js'
+import {serializeExerciseHistoryRowsWithWeightUnits} from '../../lib/json-weight.js'
 import {renderTable} from '../../lib/output.js'
 import {getExerciseDetail, listExercises, resolveExerciseSelector} from '../../lib/repositories/exercises.js'
+import {resolveExerciseWeightUnit, weightUnitLabel} from '../../lib/units.js'
 
 export default class Exercises extends Command {
   static args = {
@@ -49,8 +51,21 @@ static flags = {
 
       const exerciseId = await resolveExerciseSelector(context.db, args.selector)
       const detail = await getExerciseDetail(context.db, exerciseId)
+      const unitPreference = await resolveExerciseWeightUnit(context.db, exerciseId)
+      const unitLabel = weightUnitLabel(unitPreference)
 
-      if (this.jsonEnabled()) return {data: detail}
+      if (this.jsonEnabled()) {
+        const serializedHistoryRows = detail.lastHistoryEntry
+          ? serializeExerciseHistoryRowsWithWeightUnits([detail.lastHistoryEntry], unitPreference)
+          : []
+
+        return {
+          data: {
+            ...detail,
+            lastHistoryEntry: serializedHistoryRows[0] ?? null,
+          },
+        }
+      }
 
       this.log(`Exercise ${detail.id}: ${detail.name ?? '(unnamed)'}`)
       this.log(`Primary muscles: ${detail.primaryMuscles ?? 'n/a'}`)
@@ -63,7 +78,19 @@ static flags = {
       this.log(`Recent routines: ${detail.recentRoutines.join(', ') || 'n/a'}`)
       this.log('')
       this.log('Most recent history row')
-      this.log(renderTable(detail.lastHistoryEntry ? [detail.lastHistoryEntry] : []))
+      this.log(
+        renderTable(
+          detail.lastHistoryEntry
+            ? [{
+                ...detail.lastHistoryEntry,
+                topWeight:
+                  detail.lastHistoryEntry.topWeight === null
+                    ? null
+                    : `${detail.lastHistoryEntry.topWeight} ${unitLabel}`,
+              }]
+            : [],
+        ),
+      )
     } finally {
       await closeDb(context)
     }

@@ -20,6 +20,15 @@ describe('workouts', () => {
     const {stdout} = await runCommand('workouts 4000')
     expect(stdout).to.contain('Workout 4000')
     expect(stdout).to.contain('Exercise result 5000')
+    expect(stdout).to.contain('220 lb')
+  })
+
+  it('includes weight unit metadata in json detail output', async () => {
+    const {stdout} = await runCommand('workouts 4000 --json')
+    const payload = JSON.parse(stdout)
+    const firstSet = payload.data.exercises[0].sets[0]
+
+    expect(firstSet.weight).to.deep.equal({unit: 'lb', value: 220})
   })
 
   it('does not support --yesterday', async () => {

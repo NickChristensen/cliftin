@@ -5,6 +5,11 @@ import {DatabaseSchema} from './db.js'
 const KG_TO_LB_MULTIPLIER = 2.2
 
 export type UnitPreference = 'imperial' | 'metric' | 'unknown'
+export type WeightDisplayUnit = 'kg' | 'lb'
+export type WeightValueWithUnit = {
+  unit: WeightDisplayUnit
+  value: null | number
+}
 
 function normalizeUnitPreference(value: null | string): UnitPreference {
   if (!value) return 'unknown'
@@ -25,6 +30,17 @@ export function convertKgToDisplayVolume(volume: null | number, unitPreference: 
   if (volume === null) return null
   if (unitPreference !== 'imperial') return volume
   return Number((volume * KG_TO_LB_MULTIPLIER).toFixed(2))
+}
+
+export function weightUnitLabel(unitPreference: UnitPreference): WeightDisplayUnit {
+  return unitPreference === 'imperial' ? 'lb' : 'kg'
+}
+
+export function withWeightUnit(weight: null | number, unitPreference: UnitPreference): WeightValueWithUnit {
+  return {
+    unit: weightUnitLabel(unitPreference),
+    value: weight,
+  }
 }
 
 export async function resolveGlobalWeightUnit(db: Kysely<DatabaseSchema>): Promise<UnitPreference> {

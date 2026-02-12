@@ -1,8 +1,10 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {closeDb, openDb} from '../../lib/db.js'
+import {serializeExerciseHistoryRowsWithWeightUnits} from '../../lib/json-weight.js'
 import {renderTable} from '../../lib/output.js'
 import {getExerciseHistoryRows, resolveExerciseSelector} from '../../lib/repositories/exercises.js'
+import {resolveExerciseWeightUnit, weightUnitLabel} from '../../lib/units.js'
 
 export default class ExercisesHistory extends Command {
   static args = {
@@ -39,8 +41,12 @@ static flags = {
         routine: flags.routine,
         to: flags.to,
       })
+      const unitPreference = await resolveExerciseWeightUnit(context.db, exerciseId)
+      const unitLabel = weightUnitLabel(unitPreference)
 
-      if (this.jsonEnabled()) return {data: rows}
+      if (this.jsonEnabled()) {
+        return {data: serializeExerciseHistoryRowsWithWeightUnits(rows, unitPreference)}
+      }
 
       this.log(
         renderTable(
@@ -49,7 +55,7 @@ static flags = {
             routine: row.routine,
             sets: row.sets,
             topReps: row.topReps,
-            topWeight: row.topWeight,
+            topWeight: row.topWeight === null ? null : `${row.topWeight} ${unitLabel}`,
             totalReps: row.totalReps,
             volume: row.volume,
             workoutId: row.workoutId,

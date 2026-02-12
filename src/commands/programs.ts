@@ -1,8 +1,10 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {closeDb, openDb} from '../lib/db.js'
+import {serializeProgramDetailWithWeightUnits} from '../lib/json-weight.js'
 import {renderTable} from '../lib/output.js'
 import {getProgramDetail, listPrograms, resolveProgramSelector} from '../lib/repositories/programs.js'
+import {resolveProgramWeightUnit, weightUnitLabel} from '../lib/units.js'
 
 export default class Programs extends Command {
   static args = {
@@ -53,8 +55,12 @@ static flags = {
 
       const programId = await resolveProgramSelector(context.db, args.selector, Boolean(useActive))
       const detail = await getProgramDetail(context.db, programId)
+      const unitPreference = await resolveProgramWeightUnit(context.db, detail.program.id)
+      const unitLabel = weightUnitLabel(unitPreference)
 
-      if (this.jsonEnabled()) return {data: detail}
+      if (this.jsonEnabled()) {
+        return {data: serializeProgramDetailWithWeightUnits(detail, unitPreference)}
+      }
 
       this.log(`Program ${detail.program.id}: ${detail.program.name}`)
       this.log(`Active: ${detail.program.isActive}  Template: ${detail.program.isTemplate}`)
@@ -75,7 +81,7 @@ static flags = {
                   rpe: set.rpe,
                   setIndex: set.setIndex,
                   timeSeconds: set.timeSeconds,
-                  weight: set.weight,
+                  weight: set.weight === null ? null : `${set.weight} ${unitLabel}`,
                 })),
               )
                 .split('\n')

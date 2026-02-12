@@ -35,8 +35,13 @@ describe('exercises', () => {
     const payload = JSON.parse(stdout)
 
     expect(payload.data).to.have.length(1)
-    expect(payload.data[0].topWeight).to.equal(231)
+    expect(payload.data[0].topWeight).to.deep.equal({unit: 'lb', value: 231})
     expect(payload.data[0].topReps).to.equal(6)
+  })
+
+  it('shows unit suffix in table history output', async () => {
+    const {stdout} = await runCommand('exercises history squat --limit 1')
+    expect(stdout).to.contain('231 lb')
   })
 
   it('errors on ambiguous selector', async () => {
