@@ -10,6 +10,13 @@ function asBool(value: null | number): boolean {
 }
 
 export async function listPrograms(db: Kysely<DatabaseSchema>): Promise<ProgramSummary[]> {
+  const selectedProgram = await db
+    .selectFrom('ZWORKOUTPROGRAMSINFO as info')
+    .innerJoin('ZWORKOUTPLAN as plan', 'plan.ZID', 'info.ZSELECTEDWORKOUTPROGRAMID')
+    .select('plan.Z_PK as id')
+    .where('info.ZSELECTEDWORKOUTPROGRAMID', 'is not', null)
+    .executeTakeFirst()
+
   const rows = await db
     .selectFrom('ZWORKOUTPLAN')
     .select([
@@ -26,7 +33,7 @@ export async function listPrograms(db: Kysely<DatabaseSchema>): Promise<ProgramS
   return rows.map((row) => ({
     dateAdded: appleSecondsToIso(row.dateAdded),
     id: row.id,
-    isActive: asBool(row.isActive),
+    isActive: selectedProgram ? row.id === selectedProgram.id : asBool(row.isActive),
     isDeleted: asBool(row.isDeleted),
     isTemplate: asBool(row.isTemplate),
     name: row.name ?? '(unnamed)',
@@ -39,17 +46,28 @@ export async function resolveProgramSelector(
   activeOnly: boolean,
 ): Promise<number> {
   if (activeOnly) {
-    const rows = await db
+    const selectedProgram = await db
+      .selectFrom('ZWORKOUTPROGRAMSINFO as info')
+      .innerJoin('ZWORKOUTPLAN as plan', 'plan.ZID', 'info.ZSELECTEDWORKOUTPROGRAMID')
+      .select('plan.Z_PK as id')
+      .where('info.ZSELECTEDWORKOUTPROGRAMID', 'is not', null)
+      .executeTakeFirst()
+
+    if (selectedProgram) return selectedProgram.id
+
+    const fallbackRows = await db
       .selectFrom('ZWORKOUTPLAN')
       .select(['Z_PK as id'])
       .where('ZISCURRENT', '=', 1)
       .execute()
 
-    if (rows.length !== 1) {
-      throw new Error(`Expected exactly one active program, found ${rows.length}.`)
+    if (fallbackRows.length !== 1) {
+      throw new Error(
+        `Expected exactly one active program. Found ${fallbackRows.length} via ZISCURRENT and no selected program in ZWORKOUTPROGRAMSINFO.`,
+      )
     }
 
-    return rows[0].id
+    return fallbackRows[0].id
   }
 
   if (!selector) throw new Error('Program selector is required unless --active/--current is set.')
@@ -57,6 +75,13 @@ export async function resolveProgramSelector(
 }
 
 export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: number): Promise<ProgramDetailTree> {
+  const selectedProgram = await db
+    .selectFrom('ZWORKOUTPROGRAMSINFO as info')
+    .innerJoin('ZWORKOUTPLAN as plan', 'plan.ZID', 'info.ZSELECTEDWORKOUTPROGRAMID')
+    .select('plan.Z_PK as id')
+    .where('info.ZSELECTEDWORKOUTPROGRAMID', 'is not', null)
+    .executeTakeFirst()
+
   const programRow = await db
     .selectFrom('ZWORKOUTPLAN')
     .select([
@@ -200,7 +225,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
     program: {
       dateAdded: appleSecondsToIso(programRow.dateAdded),
       id: programRow.id,
-      isActive: asBool(programRow.isActive),
+      isActive: selectedProgram ? programRow.id === selectedProgram.id : asBool(programRow.isActive),
       isDeleted: asBool(programRow.isDeleted),
       isTemplate: asBool(programRow.isTemplate),
       name: programRow.name ?? '(unnamed)',

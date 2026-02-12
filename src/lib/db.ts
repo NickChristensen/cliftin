@@ -69,10 +69,16 @@ export interface DatabaseSchema {
   ZWORKOUTPLAN: {
     Z_PK: number
     ZDATEADDED: null | number
+    ZID: Buffer | null
     ZISCURRENT: null | number
     ZISTEMPLATE: null | number
     ZNAME: null | string
     ZSOFTDELETED: null | number
+  }
+  ZWORKOUTPROGRAMSINFO: {
+    Z_PK: number
+    ZSECONDARYWORKOUTPROGRAMID: Buffer | null
+    ZSELECTEDWORKOUTPROGRAMID: Buffer | null
   }
   ZWORKOUTRESULT: {
     Z_PK: number

@@ -9,7 +9,8 @@ export function createTestDb(): string {
   const db = new Database(dbPath)
 
   db.exec(`
-create table ZWORKOUTPLAN (Z_PK integer primary key, ZNAME text, ZISCURRENT integer, ZISTEMPLATE integer, ZSOFTDELETED integer, ZDATEADDED real);
+create table ZWORKOUTPLAN (Z_PK integer primary key, ZNAME text, ZISCURRENT integer, ZISTEMPLATE integer, ZSOFTDELETED integer, ZDATEADDED real, ZID blob);
+create table ZWORKOUTPROGRAMSINFO (Z_PK integer primary key, ZSECONDARYWORKOUTPROGRAMID blob, ZSELECTEDWORKOUTPROGRAMID blob);
 create table ZPERIOD (Z_PK integer primary key, ZWORKOUTPLAN integer);
 create table ZROUTINE (Z_PK integer primary key, ZNAME text, ZSOFTDELETED integer, ZPERIOD integer, ZWORKOUTPLAN integer);
 create table Z_12ROUTINES (Z_12EXERCISES integer, Z_28ROUTINES integer, primary key (Z_12EXERCISES, Z_28ROUTINES));
@@ -23,8 +24,9 @@ create table ZEQUIPMENT2 (Z_PK integer primary key, ZNAME text);
   `)
 
   db.exec(`
-insert into ZWORKOUTPLAN values (1, 'Active Program', 1, 0, 0, 700000000);
-insert into ZWORKOUTPLAN values (2, 'Old Program', 0, 0, 0, 690000000);
+insert into ZWORKOUTPLAN values (1, 'Active Program', 0, 0, 0, 700000000, X'AA11');
+insert into ZWORKOUTPLAN values (2, 'Old Program', 1, 0, 0, 690000000, X'BB22');
+insert into ZWORKOUTPROGRAMSINFO values (1, null, X'AA11');
 insert into ZPERIOD values (10, 1);
 insert into ZROUTINE values (100, 'Day A', 0, 10, 1);
 insert into ZROUTINE values (101, 'Day B', 0, 10, 1);
