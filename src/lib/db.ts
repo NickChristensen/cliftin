@@ -47,6 +47,7 @@ export interface DatabaseSchema {
     ZWEIGHT: null | number
   }
   ZPERIOD: {
+    Z_FOK_WORKOUTPLAN: null | number
     Z_PK: number
     ZWORKOUTPLAN: null | number
   }

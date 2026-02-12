@@ -102,6 +102,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
     .selectFrom('ZPERIOD')
     .select(['Z_PK as id'])
     .where('ZWORKOUTPLAN', '=', programId)
+    .orderBy('Z_FOK_WORKOUTPLAN', 'asc')
     .orderBy('Z_PK', 'asc')
     .execute()
 
