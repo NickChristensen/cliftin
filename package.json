@@ -1,6 +1,6 @@
 {
   "name": "cliftin",
-  "description": "A read-only CLI for liftin",
+  "description": "CLIftin: A read-only CLI for Liftin'",
   "version": "0.0.0",
   "author": "Nick Christensen",
   "bin": {
