@@ -38,6 +38,16 @@ describe('programs', () => {
     expect(firstSet.rpe).to.equal(null)
   })
 
+  it('converts planned weights to pounds when unit preference is imperial', async () => {
+    const {stdout} = await runCommand('programs --active --json')
+    const payload = JSON.parse(stdout)
+    const firstExercise = payload.data.weeks[0].routines[0].exercises[0]
+
+    expect(firstExercise.plannedWeight).to.equal(220)
+    expect(firstExercise.sets[0].weight).to.equal(220)
+    expect(firstExercise.sets[1].weight).to.equal(225.5)
+  })
+
   it('errors when selector does not exist', async () => {
     const {error} = await runCommand('programs does-not-exist')
     expect(error).to.be.instanceOf(Error)

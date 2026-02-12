@@ -4,6 +4,7 @@ import {DatabaseSchema} from '../db.js'
 import {normalizeRpe} from '../rpe.js'
 import {appleSecondsToIso} from '../time.js'
 import {PlannedExercise, PlannedSet, ProgramDetailTree, ProgramRoutine, ProgramSummary, ProgramWeek} from '../types.js'
+import {convertKgToDisplayWeight, resolveProgramWeightUnit} from '../units.js'
 import {resolveIdOrName} from './selectors.js'
 
 function asBool(value: null | number): boolean {
@@ -76,6 +77,8 @@ export async function resolveProgramSelector(
 }
 
 export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: number): Promise<ProgramDetailTree> {
+  const unitPreference = await resolveProgramWeightUnit(db, programId)
+
   const selectedProgram = await db
     .selectFrom('ZWORKOUTPROGRAMSINFO as info')
     .innerJoin('ZWORKOUTPLAN as plan', 'plan.ZID', 'info.ZSELECTEDWORKOUTPROGRAMID')
@@ -172,7 +175,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       rpe: normalizeRpe(row.rpe),
       setIndex: row.setIndex,
       timeSeconds: row.timeSeconds,
-      weight: row.weight,
+      weight: convertKgToDisplayWeight(row.weight, unitPreference),
     })
     setsByExerciseConfig.set(row.exerciseConfigId, current)
   }
@@ -191,7 +194,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
           rpe: null,
           setIndex: null,
           timeSeconds: row.plannedTimeSeconds,
-          weight: row.plannedWeight,
+          weight: convertKgToDisplayWeight(row.plannedWeight, unitPreference),
         }]
 
     current.push({
@@ -201,7 +204,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       plannedReps: row.plannedReps,
       plannedSets: row.plannedSets,
       plannedTimeSeconds: row.plannedTimeSeconds,
-      plannedWeight: row.plannedWeight,
+      plannedWeight: convertKgToDisplayWeight(row.plannedWeight, unitPreference),
       sets: fallbackSet,
     })
 

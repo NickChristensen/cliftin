@@ -3,6 +3,7 @@ import {Kysely} from 'kysely'
 import {DatabaseSchema} from '../db.js'
 import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
 import {ExerciseDetail, ExerciseHistoryRow, ExerciseSummary} from '../types.js'
+import {convertKgToDisplayVolume, convertKgToDisplayWeight, resolveExerciseWeightUnit} from '../units.js'
 import {resolveIdOrName} from './selectors.js'
 
 export type ExerciseListFilters = {
@@ -79,6 +80,7 @@ export async function getExerciseHistoryRows(
   exerciseId: number,
   filters: ExerciseHistoryFilters,
 ): Promise<ExerciseHistoryRow[]> {
+  const unitPreference = await resolveExerciseWeightUnit(db, exerciseId)
   const dateRange = dateRangeToAppleSeconds({from: filters.from, to: filters.to})
 
   let query = db
@@ -124,9 +126,9 @@ export async function getExerciseHistoryRows(
     routine: row.routineNameFromResult ?? row.routineNameFromPlan,
     sets: Number(row.sets),
     topReps: row.topReps,
-    topWeight: row.topWeight,
+    topWeight: convertKgToDisplayWeight(row.topWeight, unitPreference),
     totalReps: Number(row.totalReps),
-    volume: Number(row.volume),
+    volume: convertKgToDisplayVolume(Number(row.volume), unitPreference) ?? 0,
     workoutId: row.workoutId,
   }))
 

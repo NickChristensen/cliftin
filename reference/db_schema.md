@@ -55,6 +55,9 @@ ZWORKOUTPLAN (Program)
   Do not assume `ZROUTINE.ZWORKOUTPLAN` is always populated.
 - Planned RPE uses sentinel semantics:
   `16` is effectively the default/unspecified value and is best normalized to `null` in CLI output.
+- Weight storage and display units differ:
+  planned and logged weight values appear to be stored in kg even when user preference is imperial.
+  Resolve display unit from `ZSETTINGS.ZMEASURMENTUNIT` (fallback to equipment unit metadata) and convert for output as needed.
 - Date/timestamp fields use Apple/Core Data epoch seconds (offset from Unix epoch), not Unix seconds directly.
   Convert before comparing/formatting.
 - `ZID` fields are often BLOB identifiers (not human-readable strings). For CLI UX, use numeric `Z_PK` as primary selector.

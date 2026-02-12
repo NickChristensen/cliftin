@@ -4,6 +4,7 @@ import {DatabaseSchema} from '../db.js'
 import {normalizeRpe} from '../rpe.js'
 import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
 import {WorkoutDetail, WorkoutExerciseDetail, WorkoutSummary} from '../types.js'
+import {convertKgToDisplayVolume, convertKgToDisplayWeight, resolveGlobalWeightUnit} from '../units.js'
 import {resolveIdOrName} from './selectors.js'
 
 export type WorkoutFilters = {
@@ -56,6 +57,8 @@ export async function listWorkouts(db: Kysely<DatabaseSchema>, filters: WorkoutF
 }
 
 export async function getWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: number): Promise<WorkoutDetail> {
+  const unitPreference = await resolveGlobalWeightUnit(db)
+
   const workout = await db
     .selectFrom('ZWORKOUTRESULT as wr')
     .leftJoin('ZROUTINE as r', 'r.Z_PK', 'wr.ZROUTINE')
@@ -111,8 +114,8 @@ export async function getWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: nu
       reps: row.reps,
       rpe: normalizeRpe(row.rpe),
       timeSeconds: row.timeSeconds,
-      volume: row.volume,
-      weight: row.weight,
+      volume: convertKgToDisplayVolume(row.volume, unitPreference),
+      weight: convertKgToDisplayWeight(row.weight, unitPreference),
     })
 
     setsByExercise.set(row.exerciseResultId, current)

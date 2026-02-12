@@ -31,11 +31,11 @@ describe('exercises', () => {
   })
 
   it('supports min/max reps and weight filters in history mode', async () => {
-    const {stdout} = await runCommand('exercises history squat --min-reps 6 --max-reps 6 --min-weight 105 --max-weight 105 --json')
+    const {stdout} = await runCommand('exercises history squat --min-reps 6 --max-reps 6 --min-weight 231 --max-weight 231 --json')
     const payload = JSON.parse(stdout)
 
     expect(payload.data).to.have.length(1)
-    expect(payload.data[0].topWeight).to.equal(105)
+    expect(payload.data[0].topWeight).to.equal(231)
     expect(payload.data[0].topReps).to.equal(6)
   })
 

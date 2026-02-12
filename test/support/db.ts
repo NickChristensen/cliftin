@@ -20,7 +20,8 @@ create table ZWORKOUTRESULT (Z_PK integer primary key, ZROUTINE integer, ZROUTIN
 create table ZEXERCISERESULT (Z_PK integer primary key, ZWORKOUT integer, ZCONFIGURATION integer);
 create table ZGYMSETRESULT (Z_PK integer primary key, ZEXERCISE integer, ZREPS integer, ZWEIGHT real, ZVOLUME real, ZRPE integer, ZTIME integer);
 create table ZEXERCISEINFORMATION (Z_PK integer primary key, ZNAME text, ZMUSCLES text, ZSECONDARYMUSCLES text, ZEQUIPMENT integer, ZTIMERBASED integer, ZSUPPORTSONEREPMAX integer, ZSOFTDELETED integer, ZDEFAULTPROGRESSMETRIC text, ZPERCEPTIONSCALE text);
-create table ZEQUIPMENT2 (Z_PK integer primary key, ZNAME text);
+create table ZEQUIPMENT2 (Z_PK integer primary key, ZNAME text, ZMEASURMENTUNIT text);
+create table ZSETTINGS (ZMEASURMENTUNIT text);
   `)
 
   db.exec(`
@@ -30,7 +31,8 @@ insert into ZWORKOUTPROGRAMSINFO values (1, null, X'AA11');
 insert into ZPERIOD values (10, 1, 100);
 insert into ZROUTINE values (100, 'Day A', 0, 10, 1, 100);
 insert into ZROUTINE values (101, 'Day B', 0, 10, 1, 200);
-insert into ZEQUIPMENT2 values (1, 'barbell');
+insert into ZEQUIPMENT2 values (1, 'barbell', null);
+insert into ZSETTINGS values ('imperial');
 insert into ZEXERCISEINFORMATION values (1000, 'squat', 'legs', 'glutes', 1, 0, 1, 0, 'maxWeight', 'rpe');
 insert into ZEXERCISEINFORMATION values (1001, 'bench_press', 'chest', 'triceps', 1, 0, 1, 0, 'maxWeight', 'rpe');
 insert into ZEXERCISEINFORMATION values (1002, 'bench', 'chest', 'triceps', 1, 0, 1, 0, 'maxWeight', 'rpe');

@@ -10,6 +10,7 @@ export interface DatabaseSchema {
   }
   ZEQUIPMENT2: {
     Z_PK: number
+    ZMEASURMENTUNIT: null | string
     ZNAME: null | string
   }
   ZEXERCISECONFIGURATION: {
@@ -67,6 +68,9 @@ export interface DatabaseSchema {
     ZSETINDEX: null | number
     ZTIME: null | number
     ZWEIGHT: null | number
+  }
+  ZSETTINGS: {
+    ZMEASURMENTUNIT: null | string
   }
   ZWORKOUTPLAN: {
     Z_PK: number
