@@ -62,7 +62,7 @@
   "repository": "nickchristensen/cliftin",
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
-    "db:sync": "cp /Users/nick/Library/Containers/com.nstrm.Bello/Data/Library/Application\\ Support/Liftin/BelloDataModel.* .",
+    "db:sync": "cp /Users/nick/Library/Containers/com.nstrm.Bello/Data/Library/Application\\ Support/Liftin/BelloDataModel.* ./data",
     "lint": "eslint",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",
