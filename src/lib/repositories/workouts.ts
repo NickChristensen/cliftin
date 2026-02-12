@@ -1,6 +1,7 @@
 import {Kysely} from 'kysely'
 
 import {DatabaseSchema} from '../db.js'
+import {normalizeRpe} from '../rpe.js'
 import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
 import {WorkoutDetail, WorkoutExerciseDetail, WorkoutSummary} from '../types.js'
 import {resolveIdOrName} from './selectors.js'
@@ -108,7 +109,7 @@ export async function getWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: nu
     current.push({
       id: row.id,
       reps: row.reps,
-      rpe: row.rpe,
+      rpe: normalizeRpe(row.rpe),
       timeSeconds: row.timeSeconds,
       volume: row.volume,
       weight: row.weight,

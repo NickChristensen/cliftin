@@ -1,6 +1,7 @@
 import {Kysely} from 'kysely'
 
 import {DatabaseSchema} from '../db.js'
+import {normalizeRpe} from '../rpe.js'
 import {appleSecondsToIso} from '../time.js'
 import {PlannedExercise, PlannedSet, ProgramDetailTree, ProgramRoutine, ProgramSummary, ProgramWeek} from '../types.js'
 import {resolveIdOrName} from './selectors.js'
@@ -166,7 +167,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
     current.push({
       id: row.id,
       reps: row.reps,
-      rpe: row.rpe,
+      rpe: normalizeRpe(row.rpe),
       setIndex: row.setIndex,
       timeSeconds: row.timeSeconds,
       weight: row.weight,
