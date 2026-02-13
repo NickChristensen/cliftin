@@ -26,7 +26,7 @@ describe('workouts', () => {
   it('includes weight unit metadata in json detail output', async () => {
     const {stdout} = await runCommand('workouts 4000 --json')
     const payload = JSON.parse(stdout)
-    const firstSet = payload.data.exercises[0].sets[0]
+    const firstSet = payload.exercises[0].sets[0]
 
     expect(firstSet.weight).to.deep.equal({unit: 'lb', value: 220})
   })

@@ -13,12 +13,12 @@ describe('programs', () => {
   it('lists programs', async () => {
     const {stdout} = await runCommand('programs --json')
     const payload = JSON.parse(stdout)
-    const names = payload.data.map((item: {name: string}) => item.name)
+    const names = payload.map((item: {name: string}) => item.name)
 
     expect(names).to.include('Active Program')
     expect(names).to.not.include('Deleted Program')
-    expect(payload.data[0]).to.have.property('isActive')
-    expect(payload.data[0]).to.not.have.property('isDeleted')
+    expect(payload[0]).to.have.property('isActive')
+    expect(payload[0]).to.not.have.property('isDeleted')
   })
 
   it('uses --active for detail mode', async () => {
@@ -37,7 +37,7 @@ describe('programs', () => {
   it('normalizes default planned rpe (16) to null', async () => {
     const {stdout} = await runCommand('programs --active --json')
     const payload = JSON.parse(stdout)
-    const firstSet = payload.data.weeks[0].routines[0].exercises[0].sets[0]
+    const firstSet = payload.weeks[0].routines[0].exercises[0].sets[0]
 
     expect(firstSet.rpe).to.equal(null)
   })
@@ -45,8 +45,8 @@ describe('programs', () => {
   it('converts planned weights to pounds when unit preference is imperial', async () => {
     const {stdout} = await runCommand('programs --active --json')
     const payload = JSON.parse(stdout)
-    const squatExercise = payload.data.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1000)
-    const benchExercise = payload.data.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
+    const squatExercise = payload.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1000)
+    const benchExercise = payload.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
 
     expect(squatExercise).to.exist
     expect(squatExercise.plannedWeight).to.deep.equal({unit: 'lb', value: 220})
@@ -58,7 +58,7 @@ describe('programs', () => {
   it('expands fallback planned sets to one row per ZSETS', async () => {
     const {stdout} = await runCommand('programs --active --json')
     const payload = JSON.parse(stdout)
-    const benchExercise = payload.data.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
+    const benchExercise = payload.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
 
     expect(benchExercise.sets).to.have.length(3)
     expect(benchExercise.sets[0]).to.not.have.property('setIndex')
@@ -67,7 +67,7 @@ describe('programs', () => {
   it('orders exercises by routine relationship order', async () => {
     const {stdout} = await runCommand('programs --active --json')
     const payload = JSON.parse(stdout)
-    const exerciseIds = payload.data.weeks[0].routines[0].exercises.map((exercise: {id: number}) => exercise.id)
+    const exerciseIds = payload.weeks[0].routines[0].exercises.map((exercise: {id: number}) => exercise.id)
 
     expect(exerciseIds).to.deep.equal([1001, 1000])
   })

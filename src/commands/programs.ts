@@ -52,7 +52,7 @@ static flags = {
     current: Flags.boolean({description: 'Alias for --active'}),
   }
 
-  async run(): Promise<void | {data: unknown}> {
+  async run(): Promise<unknown | void> {
     const {args, flags} = await this.parse(Programs)
     const context = openDb()
 
@@ -66,7 +66,7 @@ static flags = {
       if (!args.selector && !useActive) {
         const programs = await listPrograms(context.db)
 
-        if (this.jsonEnabled()) return {data: programs}
+        if (this.jsonEnabled()) return programs
 
         this.log(
           renderTable(
@@ -88,7 +88,7 @@ static flags = {
       const unitLabel = weightUnitLabel(unitPreference)
 
       if (this.jsonEnabled()) {
-        return {data: serializeProgramDetailWithWeightUnits(detail, unitPreference)}
+        return serializeProgramDetailWithWeightUnits(detail, unitPreference)
       }
 
       this.log(`[${detail.program.id}] ${detail.program.name}`)

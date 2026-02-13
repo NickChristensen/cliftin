@@ -13,8 +13,8 @@ describe('exercises', () => {
   it('lists exercises with lastPerformed and timesPerformed', async () => {
     const {stdout} = await runCommand('exercises --json')
     const payload = JSON.parse(stdout)
-    const squat = payload.data.find((item: {name: string}) => item.name === 'Squat')
-    const benchPress = payload.data.find((item: {name: string}) => item.name === 'Bench Press')
+    const squat = payload.find((item: {name: string}) => item.name === 'Squat')
+    const benchPress = payload.find((item: {name: string}) => item.name === 'Bench Press')
 
     expect(squat).to.exist
     expect(benchPress).to.exist
@@ -29,16 +29,16 @@ describe('exercises', () => {
     const detailJson = JSON.parse(detail.stdout)
     const historyJson = JSON.parse(history.stdout)
 
-    expect(detailJson.data.lastHistoryEntry).to.deep.equal(historyJson.data[0])
+    expect(detailJson.lastHistoryEntry).to.deep.equal(historyJson[0])
   })
 
   it('supports min/max reps and weight filters in history mode', async () => {
     const {stdout} = await runCommand('exercises history squat --min-reps 6 --max-reps 6 --min-weight 231 --max-weight 231 --json')
     const payload = JSON.parse(stdout)
 
-    expect(payload.data).to.have.length(1)
-    expect(payload.data[0].topWeight).to.deep.equal({unit: 'lb', value: 231})
-    expect(payload.data[0].topReps).to.equal(6)
+    expect(payload).to.have.length(1)
+    expect(payload[0].topWeight).to.deep.equal({unit: 'lb', value: 231})
+    expect(payload[0].topReps).to.equal(6)
   })
 
   it('shows unit suffix in table history output', async () => {

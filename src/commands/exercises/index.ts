@@ -19,7 +19,7 @@ static flags = {
     name: Flags.string({description: 'Filter by name contains'}),
   }
 
-  async run(): Promise<void | {data: unknown}> {
+  async run(): Promise<unknown | void> {
     const {args, flags} = await this.parse(Exercises)
     const context = openDb()
 
@@ -32,7 +32,7 @@ static flags = {
           name: flags.name,
         })
 
-        if (this.jsonEnabled()) return {data: exercises}
+        if (this.jsonEnabled()) return exercises
 
         this.log(
           renderTable(
@@ -60,10 +60,8 @@ static flags = {
           : []
 
         return {
-          data: {
-            ...detail,
-            lastHistoryEntry: serializedHistoryRows[0] ?? null,
-          },
+          ...detail,
+          lastHistoryEntry: serializedHistoryRows[0] ?? null,
         }
       }
 

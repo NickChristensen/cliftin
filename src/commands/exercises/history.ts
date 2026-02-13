@@ -24,7 +24,7 @@ static flags = {
     to: Flags.string({description: 'End date YYYY-MM-DD'}),
   }
 
-  async run(): Promise<void | {data: unknown}> {
+  async run(): Promise<unknown | void> {
     const {args, flags} = await this.parse(ExercisesHistory)
     const context = openDb()
 
@@ -45,7 +45,7 @@ static flags = {
       const unitLabel = weightUnitLabel(unitPreference)
 
       if (this.jsonEnabled()) {
-        return {data: serializeExerciseHistoryRowsWithWeightUnits(rows, unitPreference)}
+        return serializeExerciseHistoryRowsWithWeightUnits(rows, unitPreference)
       }
 
       this.log(
