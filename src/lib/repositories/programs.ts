@@ -168,7 +168,6 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
           .select([
             'Z_PK as id',
             'ZEXERCISECONFIGURATION as exerciseConfigId',
-            'ZSETINDEX as setIndex',
             'ZREPS as reps',
             'ZRPE as rpe',
             'ZWEIGHT as weight',
@@ -187,7 +186,6 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       id: row.id,
       reps: row.reps,
       rpe: normalizeRpe(row.rpe),
-      setIndex: row.setIndex,
       timeSeconds: row.timeSeconds,
       weight: convertKgToDisplayWeight(row.weight, unitPreference),
     })
@@ -202,14 +200,13 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
     const explicitSets = setsByExerciseConfig.get(row.exerciseConfigId) ?? []
     const fallbackSet: PlannedSet[] = explicitSets.length > 0
       ? explicitSets
-      : [{
+      : Array.from({length: Math.max(row.plannedSets ?? 1, 1)}, () => ({
           id: null,
           reps: row.plannedReps,
           rpe: null,
-          setIndex: null,
           timeSeconds: row.plannedTimeSeconds,
           weight: convertKgToDisplayWeight(row.plannedWeight, unitPreference),
-        }]
+        }))
 
     current.push({
       exerciseConfigId: row.exerciseConfigId,

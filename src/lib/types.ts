@@ -15,7 +15,6 @@ export type PlannedSet = {
   id: null | number
   reps: null | number
   rpe: null | number
-  setIndex: null | number
   timeSeconds: null | number
   weight: null | number
 }

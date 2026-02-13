@@ -11,7 +11,7 @@ function buildRoutineRows(
     exerciseConfigId: number
     id: null | number
     name: null | string
-    sets: Array<{reps: null | number; rpe: null | number; setIndex: null | number; timeSeconds: null | number; weight: null | number}>
+    sets: Array<{reps: null | number; rpe: null | number; timeSeconds: null | number; weight: null | number}>
   }>,
   unitLabel: string,
 ): Array<Record<string, unknown>> {
@@ -20,7 +20,6 @@ function buildRoutineRows(
       exercise: `[${exercise.id ?? exercise.exerciseConfigId}] ${exercise.name ?? '(unnamed)'}`,
       reps: null,
       rpe: null,
-      setIndex: null,
       timeSeconds: null,
       weight: null,
     }
@@ -29,7 +28,6 @@ function buildRoutineRows(
       exercise: '',
       reps: set.reps,
       rpe: set.rpe,
-      setIndex: set.setIndex,
       timeSeconds: set.timeSeconds,
       weight: set.weight === null ? null : `${set.weight} ${unitLabel}`,
     }))

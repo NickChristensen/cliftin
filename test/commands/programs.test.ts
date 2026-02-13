@@ -55,6 +55,15 @@ describe('programs', () => {
     expect(benchExercise.name).to.equal('Bench Press')
   })
 
+  it('expands fallback planned sets to one row per ZSETS', async () => {
+    const {stdout} = await runCommand('programs --active --json')
+    const payload = JSON.parse(stdout)
+    const benchExercise = payload.data.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
+
+    expect(benchExercise.sets).to.have.length(3)
+    expect(benchExercise.sets[0]).to.not.have.property('setIndex')
+  })
+
   it('orders exercises by routine relationship order', async () => {
     const {stdout} = await runCommand('programs --active --json')
     const payload = JSON.parse(stdout)
