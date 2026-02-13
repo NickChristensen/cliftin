@@ -36,11 +36,13 @@ export interface DatabaseSchema {
     ZTIMERBASED: null | number
   }
   ZEXERCISERESULT: {
+    Z_FOK_WORKOUT: null | number
     Z_PK: number
     ZCONFIGURATION: null | number
     ZWORKOUT: null | number
   }
   ZGYMSETRESULT: {
+    Z_FOK_EXERCISE: null | number
     Z_PK: number
     ZEXERCISE: null | number
     ZREPS: null | number

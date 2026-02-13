@@ -53,6 +53,9 @@
   "oclif": {
     "bin": "cliftin",
     "dirname": "cliftin",
+    "helpOptions": {
+      "flagSortOrder": "none"
+    },
     "commands": "./dist/commands",
     "plugins": [
       "@oclif/plugin-help",

@@ -64,6 +64,7 @@ export type WorkoutSet = {
 }
 
 export type WorkoutExerciseDetail = {
+  exerciseId: null | number
   exerciseResultId: number
   name: null | string
   sets: WorkoutSet[]
