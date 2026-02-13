@@ -13,9 +13,11 @@ describe('exercises', () => {
   it('lists exercises with lastPerformed and timesPerformed', async () => {
     const {stdout} = await runCommand('exercises --json')
     const payload = JSON.parse(stdout)
-    const squat = payload.data.find((item: {name: string}) => item.name === 'squat')
+    const squat = payload.data.find((item: {name: string}) => item.name === 'Squat')
+    const benchPress = payload.data.find((item: {name: string}) => item.name === 'Bench Press')
 
     expect(squat).to.exist
+    expect(benchPress).to.exist
     expect(squat).to.have.property('lastPerformed')
     expect(squat).to.have.property('timesPerformed')
   })

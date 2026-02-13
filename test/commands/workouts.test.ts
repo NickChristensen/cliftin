@@ -18,8 +18,8 @@ describe('workouts', () => {
 
   it('shows workout detail', async () => {
     const {stdout} = await runCommand('workouts 4000')
-    expect(stdout).to.contain('Workout 4000')
-    expect(stdout).to.contain('Exercise result 5000')
+    expect(stdout).to.contain('[4000] Day A')
+    expect(stdout).to.contain('[5000] Squat')
     expect(stdout).to.contain('220 lb')
   })
 

@@ -6,6 +6,38 @@ import {renderTable} from '../lib/output.js'
 import {getProgramDetail, listPrograms, resolveProgramSelector} from '../lib/repositories/programs.js'
 import {resolveProgramWeightUnit, weightUnitLabel} from '../lib/units.js'
 
+function buildRoutineRows(
+  exercises: Array<{
+    exerciseConfigId: number
+    id: null | number
+    name: null | string
+    sets: Array<{reps: null | number; rpe: null | number; setIndex: null | number; timeSeconds: null | number; weight: null | number}>
+  }>,
+  unitLabel: string,
+): Array<Record<string, unknown>> {
+  return exercises.flatMap((exercise) => {
+    const headingRow: Record<string, unknown> = {
+      exercise: `[${exercise.id ?? exercise.exerciseConfigId}] ${exercise.name ?? '(unnamed)'}`,
+      reps: null,
+      rpe: null,
+      setIndex: null,
+      timeSeconds: null,
+      weight: null,
+    }
+
+    const setRows = exercise.sets.map((set) => ({
+      exercise: '',
+      reps: set.reps,
+      rpe: set.rpe,
+      setIndex: set.setIndex,
+      timeSeconds: set.timeSeconds,
+      weight: set.weight === null ? null : `${set.weight} ${unitLabel}`,
+    }))
+
+    return [headingRow, ...setRows]
+  })
+}
+
 export default class Programs extends Command {
   static args = {
     selector: Args.string({description: 'program id or name', required: false}),
@@ -61,33 +93,25 @@ static flags = {
         return {data: serializeProgramDetailWithWeightUnits(detail, unitPreference)}
       }
 
-      this.log(`Program ${detail.program.id}: ${detail.program.name}`)
+      this.log(`[${detail.program.id}] ${detail.program.name}`)
       this.log(`Active: ${detail.program.isActive}  Template: ${detail.program.isTemplate}`)
       this.log('')
 
-      for (const week of detail.weeks) {
-        this.log(`Week ${week.id}`)
+      for (const [weekIndex, week] of detail.weeks.entries()) {
+        this.log(`Week ${weekIndex + 1}`)
 
         for (const routine of week.routines) {
-          this.log(`  Routine ${routine.id}: ${routine.name ?? '(unnamed)'}`)
+          this.log('')
+          this.log(`  [${routine.id}] ${routine.name ?? '(unnamed)'}`)
+          const routineRows = buildRoutineRows(routine.exercises, unitLabel)
+          const renderedTable = renderTable(routineRows).replace(/^\n+/, '')
 
-          for (const exercise of routine.exercises) {
-            this.log(`    Exercise ${exercise.id ?? exercise.exerciseConfigId}: ${exercise.name ?? '(unnamed)'}`)
-            this.log(
-              renderTable(
-                exercise.sets.map((set) => ({
-                  reps: set.reps,
-                  rpe: set.rpe,
-                  setIndex: set.setIndex,
-                  timeSeconds: set.timeSeconds,
-                  weight: set.weight === null ? null : `${set.weight} ${unitLabel}`,
-                })),
-              )
-                .split('\n')
-                .map((line) => `      ${line}`)
-                .join('\n'),
-            )
-          }
+          this.log(
+            renderedTable
+              .split('\n')
+              .map((line) => `${line}`)
+              .join('\n'),
+          )
         }
 
         this.log('')

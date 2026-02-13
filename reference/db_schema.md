@@ -51,6 +51,12 @@ ZWORKOUTPLAN (Program)
 - Routine order within a week should **not** be inferred from `ZROUTINE.Z_PK` or routine name.
   For routine detail ordering, use `ZROUTINE.Z_FOK_PERIOD` (ascending), then `Z_PK` as tie-breaker.
   Example for week `38`: `179, 188, 200, 198, 187, 181`.
+- Exercise order within a routine should **not** be inferred from exercise config id or name.
+  For program detail ordering, use `Z_12ROUTINES.Z_FOK_12EXERCISES` (ascending), then exercise config id as tie-breaker.
+  Examples:
+  routine `179`: `160, 181`;
+  routine `188`: `53, 169, 61`;
+  routine `201`: `79, 31, 160`.
 - Some routines are linked to programs only through `ZROUTINE.ZPERIOD -> ZPERIOD.ZWORKOUTPLAN`.
   Do not assume `ZROUTINE.ZWORKOUTPLAN` is always populated.
 - Planned RPE uses sentinel semantics:

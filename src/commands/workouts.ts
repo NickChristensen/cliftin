@@ -64,7 +64,7 @@ static flags = {
         return {data: serializeWorkoutDetailWithWeightUnits(detail, unitPreference)}
       }
 
-      this.log(`Workout ${detail.id}`)
+      this.log(`[${detail.id}] ${detail.routine ?? 'Workout'}`)
       this.log(`Date: ${detail.date ?? 'n/a'}`)
       this.log(`Routine: ${detail.routine ?? 'n/a'}`)
       this.log(`Program: ${detail.program ?? 'n/a'}`)
@@ -72,7 +72,7 @@ static flags = {
       this.log('')
 
       for (const exercise of detail.exercises) {
-        this.log(`Exercise result ${exercise.exerciseResultId}: ${exercise.name ?? '(unnamed)'}`)
+        this.log(`[${exercise.exerciseResultId}] ${exercise.name ?? '(unnamed)'}`)
         this.log(
           renderTable(
             exercise.sets.map((set) => ({

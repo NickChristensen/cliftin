@@ -1,6 +1,7 @@
 import {Kysely} from 'kysely'
 
 import {DatabaseSchema} from '../db.js'
+import {formatExerciseDisplayName} from '../names.js'
 import {normalizeRpe} from '../rpe.js'
 import {appleSecondsToIso} from '../time.js'
 import {PlannedExercise, PlannedSet, ProgramDetailTree, ProgramRoutine, ProgramSummary, ProgramWeek} from '../types.js'
@@ -138,17 +139,20 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
     .select([
       'r.Z_PK as routineId',
       'ec.Z_PK as exerciseConfigId',
+      'j.Z_FOK_12EXERCISES as routineExerciseOrder',
       'ec.ZSETS as plannedSets',
       'ec.ZREPS as plannedReps',
       'ec.ZWEIGHT as plannedWeight',
       'ec.ZTIME as plannedTimeSeconds',
       'ei.Z_PK as exerciseId',
+      'ei.ZISUSERCREATED as isUserCreated',
       'ei.ZNAME as exerciseName',
     ])
     .where((eb) => eb.or([eb('p.ZWORKOUTPLAN', '=', programId), eb('r.ZWORKOUTPLAN', '=', programId)]))
     .where('r.ZSOFTDELETED', 'is not', 1)
     .where('ec.Z_PK', 'is not', null)
     .orderBy('r.Z_PK', 'asc')
+    .orderBy('j.Z_FOK_12EXERCISES', 'asc')
     .orderBy('ec.Z_PK', 'asc')
     .execute()
 
@@ -210,7 +214,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
     current.push({
       exerciseConfigId: row.exerciseConfigId,
       id: row.exerciseId,
-      name: row.exerciseName,
+      name: formatExerciseDisplayName(row.exerciseName, asBool(row.isUserCreated)),
       plannedReps: row.plannedReps,
       plannedSets: row.plannedSets,
       plannedTimeSeconds: row.plannedTimeSeconds,

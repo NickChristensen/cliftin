@@ -7,6 +7,7 @@ export interface DatabaseSchema {
   Z_12ROUTINES: {
     Z_12EXERCISES: number
     Z_28ROUTINES: number
+    Z_FOK_12EXERCISES: null | number
   }
   ZEQUIPMENT2: {
     Z_PK: number
@@ -25,6 +26,7 @@ export interface DatabaseSchema {
     Z_PK: number
     ZDEFAULTPROGRESSMETRIC: null | string
     ZEQUIPMENT: null | number
+    ZISUSERCREATED: null | number
     ZMUSCLES: null | string
     ZNAME: null | string
     ZPERCEPTIONSCALE: null | string

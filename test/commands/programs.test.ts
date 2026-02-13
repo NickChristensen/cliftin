@@ -23,14 +23,15 @@ describe('programs', () => {
 
   it('uses --active for detail mode', async () => {
     const {stdout} = await runCommand('programs --active')
-    expect(stdout).to.contain('Program 1: Active Program')
-    expect(stdout).to.contain('Week 10')
+    expect(stdout).to.contain('[1] Active Program')
+    expect(stdout).to.contain('Week 1')
+    expect(stdout).to.contain('[1001] Bench Press')
     expect(stdout).to.contain('220 lb')
   })
 
   it('supports --current alias', async () => {
     const {stdout} = await runCommand('programs --current')
-    expect(stdout).to.contain('Program 1: Active Program')
+    expect(stdout).to.contain('[1] Active Program')
   })
 
   it('normalizes default planned rpe (16) to null', async () => {
@@ -44,11 +45,22 @@ describe('programs', () => {
   it('converts planned weights to pounds when unit preference is imperial', async () => {
     const {stdout} = await runCommand('programs --active --json')
     const payload = JSON.parse(stdout)
-    const firstExercise = payload.data.weeks[0].routines[0].exercises[0]
+    const squatExercise = payload.data.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1000)
+    const benchExercise = payload.data.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
 
-    expect(firstExercise.plannedWeight).to.deep.equal({unit: 'lb', value: 220})
-    expect(firstExercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 220})
-    expect(firstExercise.sets[1].weight).to.deep.equal({unit: 'lb', value: 225.5})
+    expect(squatExercise).to.exist
+    expect(squatExercise.plannedWeight).to.deep.equal({unit: 'lb', value: 220})
+    expect(squatExercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 220})
+    expect(squatExercise.sets[1].weight).to.deep.equal({unit: 'lb', value: 225.5})
+    expect(benchExercise.name).to.equal('Bench Press')
+  })
+
+  it('orders exercises by routine relationship order', async () => {
+    const {stdout} = await runCommand('programs --active --json')
+    const payload = JSON.parse(stdout)
+    const exerciseIds = payload.data.weeks[0].routines[0].exercises.map((exercise: {id: number}) => exercise.id)
+
+    expect(exerciseIds).to.deep.equal([1001, 1000])
   })
 
   it('errors when selector does not exist', async () => {

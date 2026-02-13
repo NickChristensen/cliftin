@@ -1,6 +1,7 @@
 import {Kysely} from 'kysely'
 
 import {DatabaseSchema} from '../db.js'
+import {formatExerciseDisplayName} from '../names.js'
 import {normalizeRpe} from '../rpe.js'
 import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
 import {WorkoutDetail, WorkoutExerciseDetail, WorkoutSummary} from '../types.js'
@@ -14,6 +15,10 @@ export type WorkoutFilters = {
   program?: string
   routine?: string
   to?: string
+}
+
+function asBool(value: null | number): boolean {
+  return value === 1
 }
 
 export async function listWorkouts(db: Kysely<DatabaseSchema>, filters: WorkoutFilters): Promise<WorkoutSummary[]> {
@@ -80,7 +85,7 @@ export async function getWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: nu
     .selectFrom('ZEXERCISERESULT as er')
     .leftJoin('ZEXERCISECONFIGURATION as ec', 'ec.Z_PK', 'er.ZCONFIGURATION')
     .leftJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'ec.ZINFORMATION')
-    .select(['er.Z_PK as exerciseResultId', 'ei.ZNAME as exerciseName'])
+    .select(['er.Z_PK as exerciseResultId', 'ei.ZISUSERCREATED as isUserCreated', 'ei.ZNAME as exerciseName'])
     .where('er.ZWORKOUT', '=', workoutId)
     .orderBy('er.Z_PK', 'asc')
     .execute()
@@ -123,7 +128,7 @@ export async function getWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: nu
 
   const exercises: WorkoutExerciseDetail[] = exerciseRows.map((row) => ({
     exerciseResultId: row.exerciseResultId,
-    name: row.exerciseName,
+    name: formatExerciseDisplayName(row.exerciseName, asBool(row.isUserCreated)),
     sets: setsByExercise.get(row.exerciseResultId) ?? [],
   }))
 

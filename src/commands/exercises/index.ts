@@ -67,7 +67,7 @@ static flags = {
         }
       }
 
-      this.log(`Exercise ${detail.id}: ${detail.name ?? '(unnamed)'}`)
+      this.log(`[${detail.id}] ${detail.name ?? '(unnamed)'}`)
       this.log(`Primary muscles: ${detail.primaryMuscles ?? 'n/a'}`)
       this.log(`Secondary muscles: ${detail.secondaryMuscles ?? 'n/a'}`)
       this.log(`Equipment: ${detail.equipment ?? 'n/a'}`)

@@ -1,6 +1,7 @@
 import {Kysely} from 'kysely'
 
 import {DatabaseSchema} from '../db.js'
+import {formatExerciseDisplayName} from '../names.js'
 import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
 import {ExerciseDetail, ExerciseHistoryRow, ExerciseSummary} from '../types.js'
 import {convertKgToDisplayVolume, convertKgToDisplayWeight, resolveExerciseWeightUnit} from '../units.js'
@@ -46,6 +47,7 @@ export async function listExercises(
     .select([
       'ei.Z_PK as id',
       'ei.ZNAME as name',
+      'ei.ZISUSERCREATED as isUserCreated',
       'ei.ZMUSCLES as primaryMuscles',
       'ei.ZTIMERBASED as timerBased',
       'ei.ZSUPPORTSONEREPMAX as supports1RM',
@@ -67,7 +69,7 @@ export async function listExercises(
     equipment: row.equipment,
     id: row.id,
     lastPerformed: appleSecondsToIso(row.lastPerformed as null | number),
-    name: row.name,
+    name: formatExerciseDisplayName(row.name, asBool(row.isUserCreated)),
     primaryMuscles: row.primaryMuscles,
     supports1RM: asBool(row.supports1RM),
     timerBased: asBool(row.timerBased),
@@ -152,6 +154,7 @@ export async function getExerciseDetail(
     .select([
       'ei.Z_PK as id',
       'ei.ZNAME as name',
+      'ei.ZISUSERCREATED as isUserCreated',
       'ei.ZMUSCLES as primaryMuscles',
       'ei.ZSECONDARYMUSCLES as secondaryMuscles',
       'ei.ZDEFAULTPROGRESSMETRIC as defaultProgressMetric',
@@ -190,7 +193,7 @@ export async function getExerciseDetail(
     equipment: row.equipment,
     id: row.id,
     lastHistoryEntry: latestHistory[0] ?? null,
-    name: row.name,
+    name: formatExerciseDisplayName(row.name, asBool(row.isUserCreated)),
     perceptionScale: row.perceptionScale,
     primaryMuscles: row.primaryMuscles,
     recentRoutines: routineRows.map((routine) => routine.routineName ?? '(unnamed)').slice(0, historyLimit),
