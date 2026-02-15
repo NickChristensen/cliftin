@@ -42,6 +42,15 @@ function toText(value: unknown): string {
   return String(value)
 }
 
+function visibleWidth(value: unknown): number {
+  const text = toText(value)
+  return Math.max(
+    ...text
+      .split('\n')
+      .map((line) => line.length),
+  )
+}
+
 export function renderTable(rows: Array<Record<string, unknown>>): string {
   if (rows.length === 0) return '(no rows)'
 
@@ -56,9 +65,8 @@ export function renderTable(rows: Array<Record<string, unknown>>): string {
     const output: Record<string, unknown> = {}
     for (const key of orderedKeys) {
       const raw = row[key]
-      const text = toText(raw)
       output[key] = raw
-      widths.set(key, Math.max(widths.get(key) ?? key.length, text.length))
+      widths.set(key, Math.max(widths.get(key) ?? key.length, visibleWidth(raw)))
     }
 
     return output

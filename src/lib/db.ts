@@ -11,6 +11,7 @@ export interface DatabaseSchema {
   }
   ZEQUIPMENT2: {
     Z_PK: number
+    ZID: null | string
     ZMEASURMENTUNIT: null | string
     ZNAME: null | string
   }

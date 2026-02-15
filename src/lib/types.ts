@@ -85,6 +85,7 @@ export type ExerciseSummary = {
   lastPerformed: null | string
   name: null | string
   primaryMuscles: null | string
+  secondaryMuscles: null | string
   supports1RM: boolean
   timerBased: boolean
   timesPerformed: number

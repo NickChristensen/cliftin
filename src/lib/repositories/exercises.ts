@@ -1,22 +1,27 @@
-import {Kysely} from 'kysely'
+import {Kysely, sql} from 'kysely'
 
 import {DatabaseSchema} from '../db.js'
-import {formatExerciseDisplayName} from '../names.js'
+import {formatEquipmentDisplayName, formatExerciseDisplayName, formatMuscleLabel} from '../names.js'
 import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
 import {ExerciseDetail, ExerciseHistoryRow, ExerciseSummary} from '../types.js'
-import {convertKgToDisplayVolume, convertKgToDisplayWeight, resolveExerciseWeightUnit} from '../units.js'
+import {
+  convertDisplayWeightToKg,
+  convertKgToDisplayVolume,
+  convertKgToDisplayWeight,
+  resolveExerciseWeightUnit,
+} from '../units.js'
 import {resolveIdOrName} from './selectors.js'
 
 export type ExerciseListFilters = {
   equipment?: string
-  includeDeleted: boolean
   muscle?: string
   name?: string
+  sort?: 'lastPerformed' | 'name' | 'timesPerformed'
 }
 
 export type ExerciseHistoryFilters = {
   from?: string
-  limit: number
+  limit?: number
   maxReps?: number
   maxWeight?: number
   minReps?: number
@@ -38,6 +43,8 @@ export async function listExercises(
   db: Kysely<DatabaseSchema>,
   filters: ExerciseListFilters,
 ): Promise<ExerciseSummary[]> {
+  const nameLike = filters.name ? `%${filters.name}%` : undefined
+  const normalizedNameLike = filters.name ? `%${filters.name.toLowerCase().replaceAll('_', ' ')}%` : undefined
   let query = db
     .selectFrom('ZEXERCISEINFORMATION as ei')
     .leftJoin('ZEQUIPMENT2 as eq', 'eq.Z_PK', 'ei.ZEQUIPMENT')
@@ -49,32 +56,74 @@ export async function listExercises(
       'ei.ZNAME as name',
       'ei.ZISUSERCREATED as isUserCreated',
       'ei.ZMUSCLES as primaryMuscles',
+      'ei.ZSECONDARYMUSCLES as secondaryMuscles',
       'ei.ZTIMERBASED as timerBased',
       'ei.ZSUPPORTSONEREPMAX as supports1RM',
       'eq.ZNAME as equipment',
+      'eq.ZID as equipmentId',
       (eb) => eb.fn.max('wr.ZSTARTDATE').as('lastPerformed'),
       (eb) => eb.fn.count('wr.Z_PK').distinct().as('timesPerformed'),
     ])
-    .groupBy(['ei.Z_PK', 'eq.ZNAME'])
+    .where('ei.ZSOFTDELETED', 'is not', 1)
+    .groupBy(['ei.Z_PK', 'eq.ZNAME', 'eq.ZID'])
     .orderBy('ei.ZNAME', 'asc')
 
-  if (!filters.includeDeleted) query = query.where('ei.ZSOFTDELETED', 'is not', 1)
-  if (filters.name) query = query.where('ei.ZNAME', 'like', `%${filters.name}%`)
-  if (filters.muscle) query = query.where('ei.ZMUSCLES', 'like', `%${filters.muscle}%`)
-  if (filters.equipment) query = query.where('eq.ZNAME', 'like', `%${filters.equipment}%`)
+  if (nameLike && normalizedNameLike) {
+    query = query.where((eb) =>
+      eb.or([
+        eb('ei.ZNAME', 'like', nameLike),
+        sql<boolean>`lower(replace(ei.ZNAME, '_', ' ')) like ${normalizedNameLike}`,
+      ]),
+    )
+  }
+
+  if (filters.muscle) {
+    query = query.where((eb) => eb.or([eb('ei.ZMUSCLES', 'like', `%${filters.muscle}%`), eb('ei.ZSECONDARYMUSCLES', 'like', `%${filters.muscle}%`)]))
+  }
+
+  if (filters.equipment) {
+    query = query.where((eb) => eb.or([eb('eq.ZNAME', 'like', `%${filters.equipment}%`), eb('eq.ZID', 'like', `%${filters.equipment}%`)]))
+  }
 
   const rows = await query.execute()
 
-  return rows.map((row) => ({
-    equipment: row.equipment,
+  const summaries = rows.map((row) => ({
+    equipment: formatEquipmentDisplayName(row.equipment, row.equipmentId),
     id: row.id,
     lastPerformed: appleSecondsToIso(row.lastPerformed as null | number),
     name: formatExerciseDisplayName(row.name, asBool(row.isUserCreated)),
-    primaryMuscles: row.primaryMuscles,
+    primaryMuscles: formatMuscleLabel(row.primaryMuscles),
+    secondaryMuscles: formatMuscleLabel(row.secondaryMuscles),
     supports1RM: asBool(row.supports1RM),
     timerBased: asBool(row.timerBased),
     timesPerformed: Number(row.timesPerformed),
   }))
+
+  const sort = filters.sort ?? 'name'
+
+  if (sort === 'timesPerformed') {
+    summaries.sort((a, b) => b.timesPerformed - a.timesPerformed || a.id - b.id)
+    return summaries
+  }
+
+  if (sort === 'lastPerformed') {
+    summaries.sort((a, b) => {
+      if (a.lastPerformed === b.lastPerformed) return a.id - b.id
+      if (a.lastPerformed === null) return 1
+      if (b.lastPerformed === null) return -1
+      return b.lastPerformed.localeCompare(a.lastPerformed)
+    })
+    return summaries
+  }
+
+  summaries.sort((a, b) => {
+    const aName = (a.name ?? '').toLowerCase()
+    const bName = (b.name ?? '').toLowerCase()
+    if (aName === bName) return a.id - b.id
+    return aName.localeCompare(bName)
+  })
+
+  return summaries
 }
 
 export async function getExerciseHistoryRows(
@@ -84,6 +133,8 @@ export async function getExerciseHistoryRows(
 ): Promise<ExerciseHistoryRow[]> {
   const unitPreference = await resolveExerciseWeightUnit(db, exerciseId)
   const dateRange = dateRangeToAppleSeconds({from: filters.from, to: filters.to})
+  const minWeightKg = filters.minWeight === undefined ? undefined : convertDisplayWeightToKg(filters.minWeight, unitPreference)
+  const maxWeightKg = filters.maxWeight === undefined ? undefined : convertDisplayWeightToKg(filters.maxWeight, unitPreference)
 
   let query = db
     .selectFrom('ZWORKOUTRESULT as wr')
@@ -91,7 +142,9 @@ export async function getExerciseHistoryRows(
     .innerJoin('ZEXERCISECONFIGURATION as ec', 'ec.Z_PK', 'er.ZCONFIGURATION')
     .innerJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'ec.ZINFORMATION')
     .leftJoin('ZROUTINE as r', 'r.Z_PK', 'wr.ZROUTINE')
-    .leftJoin('ZWORKOUTPLAN as p', 'p.Z_PK', 'r.ZWORKOUTPLAN')
+    .leftJoin('ZPERIOD as per', 'per.Z_PK', 'r.ZPERIOD')
+    .leftJoin('ZWORKOUTPLAN as pDirect', 'pDirect.Z_PK', 'r.ZWORKOUTPLAN')
+    .leftJoin('ZWORKOUTPLAN as pFromPeriod', 'pFromPeriod.Z_PK', 'per.ZWORKOUTPLAN')
     .leftJoin('ZGYMSETRESULT as gs', 'gs.ZEXERCISE', 'er.Z_PK')
     .select([
       'wr.Z_PK as workoutId',
@@ -110,7 +163,7 @@ export async function getExerciseHistoryRows(
 
   if (filters.program) {
     const programId = await resolveIdOrName(db, 'ZWORKOUTPLAN', filters.program)
-    query = query.where('r.ZWORKOUTPLAN', '=', programId)
+    query = query.where((eb) => eb.or([eb('r.ZWORKOUTPLAN', '=', programId), eb('per.ZWORKOUTPLAN', '=', programId)]))
   }
 
   if (filters.routine) {
@@ -120,8 +173,13 @@ export async function getExerciseHistoryRows(
 
   if (dateRange.from !== undefined) query = query.where('wr.ZSTARTDATE', '>=', dateRange.from)
   if (dateRange.to !== undefined) query = query.where('wr.ZSTARTDATE', '<=', dateRange.to)
+  if (filters.minReps !== undefined) query = query.having((eb) => eb.fn.max('gs.ZREPS'), '>=', filters.minReps)
+  if (filters.maxReps !== undefined) query = query.having((eb) => eb.fn.max('gs.ZREPS'), '<=', filters.maxReps)
+  if (minWeightKg !== undefined) query = query.having((eb) => eb.fn.max('gs.ZWEIGHT'), '>=', minWeightKg)
+  if (maxWeightKg !== undefined) query = query.having((eb) => eb.fn.max('gs.ZWEIGHT'), '<=', maxWeightKg)
+  if (filters.limit !== undefined) query = query.limit(filters.limit)
 
-  const rows = await query.limit(filters.limit).execute()
+  const rows = await query.execute()
 
   const normalized: ExerciseHistoryRow[] = rows.map((row) => ({
     date: appleSecondsToIso(row.startDate),
@@ -134,13 +192,7 @@ export async function getExerciseHistoryRows(
     workoutId: row.workoutId,
   }))
 
-  return normalized.filter((row) => {
-    if (filters.minReps !== undefined && row.topReps !== null && row.topReps < filters.minReps) return false
-    if (filters.maxReps !== undefined && row.topReps !== null && row.topReps > filters.maxReps) return false
-    if (filters.minWeight !== undefined && row.topWeight !== null && row.topWeight < filters.minWeight) return false
-    if (filters.maxWeight !== undefined && row.topWeight !== null && row.topWeight > filters.maxWeight) return false
-    return true
-  })
+  return normalized
 }
 
 export async function getExerciseDetail(
@@ -162,6 +214,7 @@ export async function getExerciseDetail(
       'ei.ZTIMERBASED as timerBased',
       'ei.ZSUPPORTSONEREPMAX as supports1RM',
       'eq.ZNAME as equipment',
+      'eq.ZID as equipmentId',
     ])
     .where('ei.Z_PK', '=', exerciseId)
     .executeTakeFirst()
@@ -190,14 +243,14 @@ export async function getExerciseDetail(
 
   return {
     defaultProgressMetric: row.defaultProgressMetric,
-    equipment: row.equipment,
+    equipment: formatEquipmentDisplayName(row.equipment, row.equipmentId),
     id: row.id,
     lastHistoryEntry: latestHistory[0] ?? null,
     name: formatExerciseDisplayName(row.name, asBool(row.isUserCreated)),
     perceptionScale: row.perceptionScale,
-    primaryMuscles: row.primaryMuscles,
+    primaryMuscles: formatMuscleLabel(row.primaryMuscles),
     recentRoutines: routineRows.map((routine) => routine.routineName ?? '(unnamed)').slice(0, historyLimit),
-    secondaryMuscles: row.secondaryMuscles,
+    secondaryMuscles: formatMuscleLabel(row.secondaryMuscles),
     supports1RM: asBool(row.supports1RM),
     timerBased: asBool(row.timerBased),
     totalRoutines: routineRows.length,

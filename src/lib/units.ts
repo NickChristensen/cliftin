@@ -26,6 +26,11 @@ export function convertKgToDisplayWeight(weight: null | number, unitPreference: 
   return Number((weight * KG_TO_LB_MULTIPLIER).toFixed(2))
 }
 
+export function convertDisplayWeightToKg(weight: number, unitPreference: UnitPreference): number {
+  if (unitPreference !== 'imperial') return weight
+  return Number((weight / KG_TO_LB_MULTIPLIER).toFixed(6))
+}
+
 export function convertKgToDisplayVolume(volume: null | number, unitPreference: UnitPreference): null | number {
   if (volume === null) return null
   if (unitPreference !== 'imperial') return volume

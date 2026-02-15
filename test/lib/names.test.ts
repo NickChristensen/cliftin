@@ -1,6 +1,6 @@
 import {expect} from 'chai'
 
-import {formatExerciseDisplayName, formatExerciseName} from '../../src/lib/names.js'
+import {formatExerciseDisplayName, formatExerciseName, formatMuscleLabel} from '../../src/lib/names.js'
 
 describe('names', () => {
   it('formats built-in snake_case names to title case', () => {
@@ -11,5 +11,9 @@ describe('names', () => {
 
   it('preserves user-created names', () => {
     expect(formatExerciseDisplayName('My Custom Exercise', true)).to.equal('My Custom Exercise')
+  })
+
+  it('formats muscle lists with comma spacing', () => {
+    expect(formatMuscleLabel('hamstrings,glutes')).to.equal('Hamstrings, Glutes')
   })
 })

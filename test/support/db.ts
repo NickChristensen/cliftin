@@ -20,7 +20,7 @@ create table ZWORKOUTRESULT (Z_PK integer primary key, ZROUTINE integer, ZROUTIN
 create table ZEXERCISERESULT (Z_PK integer primary key, ZWORKOUT integer, ZCONFIGURATION integer, Z_FOK_WORKOUT integer);
 create table ZGYMSETRESULT (Z_PK integer primary key, ZEXERCISE integer, Z_FOK_EXERCISE integer, ZREPS integer, ZWEIGHT real, ZVOLUME real, ZRPE integer, ZTIME integer);
 create table ZEXERCISEINFORMATION (Z_PK integer primary key, ZNAME text, ZMUSCLES text, ZSECONDARYMUSCLES text, ZEQUIPMENT integer, ZTIMERBASED integer, ZSUPPORTSONEREPMAX integer, ZISUSERCREATED integer, ZSOFTDELETED integer, ZDEFAULTPROGRESSMETRIC text, ZPERCEPTIONSCALE text);
-create table ZEQUIPMENT2 (Z_PK integer primary key, ZNAME text, ZMEASURMENTUNIT text);
+create table ZEQUIPMENT2 (Z_PK integer primary key, ZNAME text, ZID text, ZMEASURMENTUNIT text);
 create table ZSETTINGS (ZMEASURMENTUNIT text);
   `)
 
@@ -32,11 +32,13 @@ insert into ZWORKOUTPROGRAMSINFO values (1, null, X'AA11');
 insert into ZPERIOD values (10, 1, 100);
 insert into ZROUTINE values (100, 'Day A', 0, 10, null, 100);
 insert into ZROUTINE values (101, 'Day B', 0, 10, null, 200);
-insert into ZEQUIPMENT2 values (1, 'barbell', null);
+insert into ZEQUIPMENT2 values (1, 'settings:equipment:equipment_default_name', 'smithMachine', null);
+insert into ZEQUIPMENT2 values (2, 'Straight Curl Bar', 'BBB6E07D-B75F-459D-9FF8-4A97AD6AE665', null);
 insert into ZSETTINGS values ('imperial');
 insert into ZEXERCISEINFORMATION values (1000, 'squat', 'legs', 'glutes', 1, 0, 1, 0, 0, 'maxWeight', 'rpe');
 insert into ZEXERCISEINFORMATION values (1001, 'bench_press', 'chest', 'triceps', 1, 0, 1, 0, 0, 'maxWeight', 'rpe');
-insert into ZEXERCISEINFORMATION values (1002, 'bench', 'chest', 'triceps', 1, 0, 1, 1, 0, 'maxWeight', 'rpe');
+insert into ZEXERCISEINFORMATION values (1002, 'bench', 'chest', 'triceps', 2, 0, 1, 1, 0, 'maxWeight', 'rpe');
+insert into ZEXERCISEINFORMATION values (1003, 'deleted_exercise', 'legs', 'glutes', 1, 0, 1, 0, 1, 'maxWeight', 'rpe');
 insert into ZEXERCISECONFIGURATION values (2000, 1000, 5, 3, 100, null);
 insert into ZEXERCISECONFIGURATION values (2001, 1001, 5, 3, 80, null);
 insert into Z_12ROUTINES values (2000, 100, 200);
