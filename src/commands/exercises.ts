@@ -32,6 +32,52 @@ function formatWorkoutDate(dateIso: null | string): string {
   return format(parsed, 'yyyy-MM-dd HH:mm')
 }
 
+type ParsedFlags = {
+  all: boolean
+  equipment?: string
+  from?: string
+  limit?: number
+  'max-reps'?: number
+  'max-weight'?: number
+  'min-reps'?: number
+  'min-weight'?: number
+  muscle?: string
+  name?: string
+  program?: string
+  routine?: string
+  sort: 'lastPerformed' | 'name' | 'timesPerformed'
+  to?: string
+}
+
+function hasHistoryFilters(flags: ParsedFlags): boolean {
+  return (
+    flags.all ||
+    flags.from !== undefined ||
+    flags.limit !== undefined ||
+    flags['max-reps'] !== undefined ||
+    flags['max-weight'] !== undefined ||
+    flags['min-reps'] !== undefined ||
+    flags['min-weight'] !== undefined ||
+    flags.program !== undefined ||
+    flags.routine !== undefined ||
+    flags.to !== undefined
+  )
+}
+
+function toHistoryFilters(flags: ParsedFlags) {
+  return {
+    from: flags.from,
+    limit: flags.all ? undefined : (flags.limit ?? 100),
+    maxReps: flags['max-reps'],
+    maxWeight: flags['max-weight'],
+    minReps: flags['min-reps'],
+    minWeight: flags['min-weight'],
+    program: flags.program,
+    routine: flags.routine,
+    to: flags.to,
+  }
+}
+
 export default class Exercises extends Command {
   static args = {
     selector: Args.string({description: 'exercise id or name', required: false}),
@@ -61,18 +107,20 @@ export default class Exercises extends Command {
 
   async run(): Promise<unknown | void> {
     const {args, flags} = await this.parse(Exercises)
+    const parsedFlags = flags as ParsedFlags
     const context = openDb()
 
     try {
       if (!args.selector) {
-        const hasHistoryFlags = flags.all || flags.from || flags.limit !== undefined || flags['max-reps'] !== undefined || flags['max-weight'] !== undefined || flags['min-reps'] !== undefined || flags['min-weight'] !== undefined || flags.program || flags.routine || flags.to
-        if (hasHistoryFlags) this.error('History filters require an exercise selector. Use: cliftin exercises <selector> [history flags]')
+        if (hasHistoryFilters(parsedFlags)) {
+          this.error('History filters require an exercise selector. Use: cliftin exercises <selector> [history flags]')
+        }
 
         const exercises = await listExercises(context.db, {
-          equipment: flags.equipment,
-          muscle: flags.muscle,
-          name: flags.name,
-          sort: flags.sort,
+          equipment: parsedFlags.equipment,
+          muscle: parsedFlags.muscle,
+          name: parsedFlags.name,
+          sort: parsedFlags.sort,
         })
 
         if (this.jsonEnabled()) return exercises
@@ -94,32 +142,13 @@ export default class Exercises extends Command {
 
       const exerciseId = await resolveExerciseSelector(context.db, args.selector)
       const detail = await getExerciseDetail(context.db, exerciseId)
-      const historyRows = await getExerciseHistoryRows(context.db, exerciseId, {
-        from: flags.from,
-        limit: flags.all ? undefined : (flags.limit ?? 100),
-        maxReps: flags['max-reps'],
-        maxWeight: flags['max-weight'],
-        minReps: flags['min-reps'],
-        minWeight: flags['min-weight'],
-        program: flags.program,
-        routine: flags.routine,
-        to: flags.to,
-      })
+      const historyFilters = toHistoryFilters(parsedFlags)
+      const historyRows = await getExerciseHistoryRows(context.db, exerciseId, historyFilters)
       const lastPerformedSnapshot = await getLastPerformedExerciseSnapshot(context.db, detail.id)
 
       if (this.jsonEnabled()) {
         const historyUnitPreference = await resolveExerciseWeightUnit(context.db, exerciseId)
-        const history = (await getExerciseHistoryWithSetsRows(context.db, exerciseId, {
-          from: flags.from,
-          limit: flags.all ? undefined : (flags.limit ?? 100),
-          maxReps: flags['max-reps'],
-          maxWeight: flags['max-weight'],
-          minReps: flags['min-reps'],
-          minWeight: flags['min-weight'],
-          program: flags.program,
-          routine: flags.routine,
-          to: flags.to,
-        })).map((row) => ({
+        const history = (await getExerciseHistoryWithSetsRows(context.db, exerciseId, historyFilters)).map((row) => ({
           ...row,
           sets: row.sets.map((set) => ({
             ...set,
