@@ -73,9 +73,18 @@ describe('exercises list', () => {
   })
 
   it('errors when db path is missing', async () => {
-    delete process.env.LIFTIN_DB_PATH
-    const {error} = await runCommand('exercises list')
-    expect(error).to.be.instanceOf(Error)
-    expect(error?.message).to.contain('Missing LIFTIN_DB_PATH')
+    const previousDbPath = process.env.LIFTIN_DB_PATH
+    try {
+      delete process.env.LIFTIN_DB_PATH
+      const {error} = await runCommand('exercises list')
+      expect(error).to.be.instanceOf(Error)
+      expect(error?.message).to.contain('Missing LIFTIN_DB_PATH')
+    } finally {
+      if (previousDbPath === undefined) {
+        delete process.env.LIFTIN_DB_PATH
+      } else {
+        process.env.LIFTIN_DB_PATH = previousDbPath
+      }
+    }
   })
 })

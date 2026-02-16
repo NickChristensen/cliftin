@@ -57,7 +57,7 @@ function buildProgramRows(
 
 export default class ProgramsShow extends Command {
   static args = {
-    selector: Args.string({description: 'program id or name', required: false}),
+    selector: Args.string({description: 'program id or name', ignoreStdin: true, required: false}),
   }
   static description = 'Show one program hierarchy'
   static enableJsonFlag = true
