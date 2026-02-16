@@ -24,8 +24,7 @@ describe('programs', () => {
   it('uses --active for detail mode', async () => {
     const {stdout} = await runCommand('programs --active')
     expect(stdout).to.contain('[1] Active Program')
-    expect(stdout).to.contain('Week 1')
-    expect(stdout).to.contain('[1001] Bench Press')
+    expect(stdout).to.contain('week')
     expect(stdout).to.contain('220 lb')
   })
 

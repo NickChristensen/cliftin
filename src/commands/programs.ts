@@ -6,34 +6,53 @@ import {renderTable} from '../lib/output.js'
 import {getProgramDetail, listPrograms, resolveProgramSelector} from '../lib/repositories/programs.js'
 import {resolveProgramWeightUnit, weightUnitLabel} from '../lib/units.js'
 
-function buildRoutineRows(
+type ProgramRoutine = {
   exercises: Array<{
     exerciseConfigId: number
     id: null | number
     name: null | string
     sets: Array<{reps: null | number; rpe: null | number; timeSeconds: null | number; weight: null | number}>
-  }>,
+  }>
+  id: number
+  name: null | string
+}
+
+type ProgramWeek = {
+  routines: ProgramRoutine[]
+}
+
+function buildProgramRows(
+  weeks: ProgramWeek[],
   unitLabel: string,
 ): Array<Record<string, unknown>> {
-  return exercises.flatMap((exercise) => {
-    const headingRow: Record<string, unknown> = {
-      exercise: `[${exercise.id ?? exercise.exerciseConfigId}] ${exercise.name ?? '(unnamed)'}`,
-      reps: null,
-      rpe: null,
-      timeSeconds: null,
-      weight: null,
-    }
+  return weeks.flatMap((week, weekIndex) =>
+    week.routines.flatMap((routine, routineIndex) =>
+      routine.exercises.flatMap((exercise, exerciseIndex) => {
+        const headingRow: Record<string, unknown> = {}
+        headingRow.week = routineIndex === 0 && exerciseIndex === 0 ? `Week ${weekIndex + 1}` : ''
+        headingRow.routine = exerciseIndex === 0 ? `[${routine.id}] ${routine.name ?? '(unnamed)'}` : ''
+        headingRow.exercise = `[${exercise.id ?? exercise.exerciseConfigId}] ${exercise.name ?? '(unnamed)'}`
+        headingRow.reps = null
+        headingRow.rpe = null
+        headingRow.timeSeconds = null
+        headingRow.weight = null
 
-    const setRows = exercise.sets.map((set) => ({
-      exercise: '',
-      reps: set.reps,
-      rpe: set.rpe,
-      timeSeconds: set.timeSeconds,
-      weight: set.weight === null ? null : `${set.weight} ${unitLabel}`,
-    }))
+        const setRows = exercise.sets.map((set) => {
+          const row: Record<string, unknown> = {}
+          row.week = ''
+          row.routine = ''
+          row.exercise = ''
+          row.reps = set.reps
+          row.rpe = set.rpe
+          row.timeSeconds = set.timeSeconds
+          row.weight = set.weight === null ? null : `${set.weight} ${unitLabel}`
+          return row
+        })
 
-    return [headingRow, ...setRows]
-  })
+        return [headingRow, ...setRows]
+      }),
+    ),
+  )
 }
 
 export default class Programs extends Command {
@@ -94,26 +113,10 @@ static flags = {
       this.log(`[${detail.program.id}] ${detail.program.name}`)
       this.log(`Active: ${detail.program.isActive}  Template: ${detail.program.isTemplate}`)
       this.log('')
-
-      for (const [weekIndex, week] of detail.weeks.entries()) {
-        this.log(`Week ${weekIndex + 1}`)
-
-        for (const routine of week.routines) {
-          this.log('')
-          this.log(`  [${routine.id}] ${routine.name ?? '(unnamed)'}`)
-          const routineRows = buildRoutineRows(routine.exercises, unitLabel)
-          const renderedTable = renderTable(routineRows).replace(/^\n+/, '')
-
-          this.log(
-            renderedTable
-              .split('\n')
-              .map((line) => `${line}`)
-              .join('\n'),
-          )
-        }
-
-        this.log('')
-      }
+      const programRows = buildProgramRows(detail.weeks, unitLabel)
+      const renderedTable = renderTable(programRows).replace(/^\n+/, '')
+      this.log(renderedTable)
+      this.log('')
     } finally {
       await closeDb(context)
     }
