@@ -64,6 +64,19 @@ describe('exercises', () => {
     expect(detailJson.lastHistoryEntry).to.deep.equal(historyJson[0])
   })
 
+  it('includes lastPerformed workout snapshot with set-level rows in detail json output', async () => {
+    const {stdout} = await runCommand('exercises squat --json')
+    const payload = JSON.parse(stdout)
+
+    expect(payload.lastPerformed).to.exist
+    expect(payload.lastPerformed.id).to.equal(4001)
+    expect(payload.lastPerformed.routine).to.equal('Day A')
+    expect(payload.lastPerformed.program).to.equal('Active Program')
+    expect(payload.lastPerformed.exercise.exerciseId).to.equal(1000)
+    expect(payload.lastPerformed.exercise.sets[0].id).to.equal(6002)
+    expect(payload.lastPerformed.exercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 231})
+  })
+
   it('supports min/max reps and weight filters in history mode', async () => {
     const {stdout} = await runCommand('exercises history squat --min-reps 6 --max-reps 6 --min-weight 231 --max-weight 231 --json')
     const payload = JSON.parse(stdout)
@@ -99,6 +112,16 @@ describe('exercises', () => {
     const {stdout} = await runCommand('exercises 1000')
     expect(stdout).to.contain('Primary muscles: Legs')
     expect(stdout).to.contain('Secondary muscles: Glutes')
+  })
+
+  it('shows last performed workout header and selected exercise sets in detail plain output', async () => {
+    const {stdout} = await runCommand('exercises squat')
+    expect(stdout).to.contain('Last performed')
+    expect(stdout).to.contain('[4001] Day A')
+    expect(stdout).to.contain('Program: Active Program')
+    expect(stdout).to.match(/Date: \d{4}-\d{2}-\d{2} \d{2}:\d{2}/)
+    expect(stdout).to.contain('6002')
+    expect(stdout).to.contain('231 lb')
   })
 
   it('renders list muscles with newline-separated primary/secondary values', async () => {

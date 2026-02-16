@@ -3,7 +3,7 @@ import {Kysely, sql} from 'kysely'
 import {DatabaseSchema} from '../db.js'
 import {formatEquipmentDisplayName, formatExerciseDisplayName, formatMuscleLabel} from '../names.js'
 import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
-import {ExerciseDetail, ExerciseHistoryRow, ExerciseSummary} from '../types.js'
+import {ExerciseDetail, ExerciseHistoryRow, ExerciseSummary, WorkoutDetail, WorkoutExerciseDetail} from '../types.js'
 import {
   convertDisplayWeightToKg,
   convertKgToDisplayVolume,
@@ -11,6 +11,7 @@ import {
   resolveExerciseWeightUnit,
 } from '../units.js'
 import {resolveIdOrName} from './selectors.js'
+import {getWorkoutDetail} from './workouts.js'
 
 export type ExerciseListFilters = {
   equipment?: string
@@ -29,6 +30,11 @@ export type ExerciseHistoryFilters = {
   program?: string
   routine?: string
   to?: string
+}
+
+export type ExerciseLastPerformedSnapshot = {
+  exercise: WorkoutExerciseDetail
+  workout: WorkoutDetail
 }
 
 function asBool(value: null | number): boolean {
@@ -303,4 +309,19 @@ export async function getExerciseDetail(
     totalRoutines: routineRows.length,
     totalWorkouts: Number(workoutCountRow?.totalWorkouts ?? 0),
   }
+}
+
+export async function getLastPerformedExerciseSnapshot(
+  db: Kysely<DatabaseSchema>,
+  exerciseId: number,
+): Promise<ExerciseLastPerformedSnapshot | null> {
+  const latestHistory = await getExerciseHistoryRows(db, exerciseId, {limit: 1})
+  const latest = latestHistory[0]
+  if (!latest) return null
+
+  const workout = await getWorkoutDetail(db, latest.workoutId)
+  const exercise = workout.exercises.find((entry) => entry.exerciseId === exerciseId)
+  if (!exercise) return null
+
+  return {exercise, workout}
 }

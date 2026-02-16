@@ -1,10 +1,11 @@
 import {Args, Command, Flags} from '@oclif/core'
+import {format, isValid, parseISO} from 'date-fns'
 
 import {closeDb, openDb} from '../../lib/db.js'
 import {serializeExerciseHistoryRowsWithWeightUnits} from '../../lib/json-weight.js'
 import {renderTable} from '../../lib/output.js'
-import {getExerciseDetail, listExercises, resolveExerciseSelector} from '../../lib/repositories/exercises.js'
-import {resolveExerciseWeightUnit, weightUnitLabel} from '../../lib/units.js'
+import {getExerciseDetail, getLastPerformedExerciseSnapshot, listExercises, resolveExerciseSelector} from '../../lib/repositories/exercises.js'
+import {resolveExerciseWeightUnit, resolveGlobalWeightUnit, weightUnitLabel, withWeightUnit} from '../../lib/units.js'
 
 function formatMusclesCell(primaryMuscles: null | string, secondaryMuscles: null | string): string {
   const primary = primaryMuscles ?? 'n/a'
@@ -15,6 +16,14 @@ function formatMusclesCell(primaryMuscles: null | string, secondaryMuscles: null
     .filter((part) => part.length > 0)
     .join('\n')
   return `${primary}\n${secondaryLines}`
+}
+
+function formatWorkoutDate(dateIso: null | string): string {
+  if (!dateIso) return 'n/a'
+
+  const parsed = parseISO(dateIso)
+  if (!isValid(parsed)) return dateIso
+  return format(parsed, 'yyyy-MM-dd HH:mm')
 }
 
 export default class Exercises extends Command {
@@ -66,17 +75,58 @@ export default class Exercises extends Command {
 
       const exerciseId = await resolveExerciseSelector(context.db, args.selector)
       const detail = await getExerciseDetail(context.db, exerciseId)
-      const unitPreference = await resolveExerciseWeightUnit(context.db, exerciseId)
-      const unitLabel = weightUnitLabel(unitPreference)
+      const lastPerformedSnapshot = await getLastPerformedExerciseSnapshot(context.db, detail.id)
 
       if (this.jsonEnabled()) {
+        const historyUnitPreference = await resolveExerciseWeightUnit(context.db, exerciseId)
         const serializedHistoryRows = detail.lastHistoryEntry
-          ? serializeExerciseHistoryRowsWithWeightUnits([detail.lastHistoryEntry], unitPreference)
+          ? serializeExerciseHistoryRowsWithWeightUnits([detail.lastHistoryEntry], historyUnitPreference)
           : []
+        const lastHistoryEntry = serializedHistoryRows[0] ?? null
+
+        let lastPerformed: null | {
+          date: null | string
+          exercise: {
+            exerciseId: null | number
+            exerciseResultId: number
+            name: null | string
+            sets: Array<{
+              id: number
+              reps: null | number
+              rpe: null | number
+              timeSeconds: null | number
+              volume: null | number
+              weight: ReturnType<typeof withWeightUnit>
+            }>
+          }
+          id: number
+          program: null | string
+          routine: null | string
+        } = null
+
+        if (lastPerformedSnapshot) {
+          const workoutUnitPreference = await resolveGlobalWeightUnit(context.db)
+          lastPerformed = {
+            date: lastPerformedSnapshot.workout.date,
+            exercise: {
+              exerciseId: lastPerformedSnapshot.exercise.exerciseId,
+              exerciseResultId: lastPerformedSnapshot.exercise.exerciseResultId,
+              name: lastPerformedSnapshot.exercise.name,
+              sets: lastPerformedSnapshot.exercise.sets.map((set) => ({
+                ...set,
+                weight: withWeightUnit(set.weight, workoutUnitPreference),
+              })),
+            },
+            id: lastPerformedSnapshot.workout.id,
+            program: lastPerformedSnapshot.workout.program,
+            routine: lastPerformedSnapshot.workout.routine,
+          }
+        }
 
         return {
           ...detail,
-          lastHistoryEntry: serializedHistoryRows[0] ?? null,
+          lastHistoryEntry,
+          lastPerformed,
         }
       }
 
@@ -90,20 +140,29 @@ export default class Exercises extends Command {
       this.log(`Routines present in: ${detail.totalRoutines}`)
       this.log(`Recent routines: ${detail.recentRoutines.join(', ') || 'n/a'}`)
       this.log('')
-      this.log('Most recent history row')
+      this.log('Last performed')
+      if (!lastPerformedSnapshot) {
+        this.log('(no rows)')
+        return
+      }
+
+      const unitPreference = await resolveGlobalWeightUnit(context.db)
+      const unitLabel = weightUnitLabel(unitPreference)
+
+      this.log(`[${lastPerformedSnapshot.workout.id}] ${lastPerformedSnapshot.workout.routine ?? 'Workout'}`)
+      this.log(`Program: ${lastPerformedSnapshot.workout.program ?? 'n/a'}`)
+      this.log(`Date: ${formatWorkoutDate(lastPerformedSnapshot.workout.date)}`)
+      this.log('')
       this.log(
         renderTable(
-          detail.lastHistoryEntry
-            ? [
-                {
-                  ...detail.lastHistoryEntry,
-                  topWeight:
-                    detail.lastHistoryEntry.topWeight === null
-                      ? null
-                      : `${detail.lastHistoryEntry.topWeight} ${unitLabel}`,
-                },
-              ]
-            : [],
+          lastPerformedSnapshot.exercise.sets.map((set) => ({
+            id: set.id,
+            reps: set.reps,
+            rpe: set.rpe,
+            timeSeconds: set.timeSeconds,
+            volume: set.volume,
+            weight: set.weight === null ? null : `${set.weight} ${unitLabel}`,
+          })),
         ),
       )
     } finally {
