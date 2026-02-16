@@ -3,7 +3,14 @@ import {Kysely, sql} from 'kysely'
 import {DatabaseSchema} from '../db.js'
 import {formatEquipmentDisplayName, formatExerciseDisplayName, formatMuscleLabel} from '../names.js'
 import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
-import {ExerciseDetail, ExerciseHistoryRow, ExerciseSummary, WorkoutDetail, WorkoutExerciseDetail} from '../types.js'
+import {
+  ExerciseDetail,
+  ExerciseHistoryRow,
+  ExerciseHistoryWithSetsRow,
+  ExerciseSummary,
+  WorkoutDetail,
+  WorkoutExerciseDetail,
+} from '../types.js'
 import {
   convertDisplayWeightToKg,
   convertKgToDisplayVolume,
@@ -246,6 +253,40 @@ export async function getExerciseHistoryRows(
   }))
 
   return normalized
+}
+
+export async function getExerciseHistoryWithSetsRows(
+  db: Kysely<DatabaseSchema>,
+  exerciseId: number,
+  filters: ExerciseHistoryFilters,
+): Promise<ExerciseHistoryWithSetsRow[]> {
+  const summaryRows = await getExerciseHistoryRows(db, exerciseId, filters)
+  if (summaryRows.length === 0) return []
+
+  const workouts = await Promise.all(summaryRows.map((summary) => getWorkoutDetail(db, summary.workoutId)))
+  const workoutsById = new Map(workouts.map((workout) => [workout.id, workout]))
+
+  return summaryRows.map((summary) => {
+    const workout = workoutsById.get(summary.workoutId)
+    const exercise = workout?.exercises.find((entry) => entry.exerciseId === exerciseId)
+
+    return {
+      date: summary.date,
+      routine: summary.routine,
+      sets: (exercise?.sets ?? []).map((set) => ({
+        reps: set.reps,
+        setId: set.id,
+        timeSeconds: set.timeSeconds,
+        volume: set.volume,
+        weight: set.weight,
+      })),
+      topReps: summary.topReps,
+      topWeight: summary.topWeight,
+      totalReps: summary.totalReps,
+      volume: summary.volume,
+      workoutId: summary.workoutId,
+    }
+  })
 }
 
 export async function getExerciseDetail(

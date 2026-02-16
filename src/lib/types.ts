@@ -102,6 +102,25 @@ export type ExerciseHistoryRow = {
   workoutId: number
 }
 
+export type ExerciseHistorySet = {
+  reps: null | number
+  setId: number
+  timeSeconds: null | number
+  volume: null | number
+  weight: null | number
+}
+
+export type ExerciseHistoryWithSetsRow = {
+  date: null | string
+  routine: null | string
+  sets: ExerciseHistorySet[]
+  topReps: null | number
+  topWeight: null | number
+  totalReps: number
+  volume: number
+  workoutId: number
+}
+
 export type ExerciseDetail = {
   defaultProgressMetric: null | string
   equipment: null | string

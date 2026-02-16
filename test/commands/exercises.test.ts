@@ -54,57 +54,64 @@ describe('exercises', () => {
     expect(ids).to.deep.equal([1000, 1001, 1002])
   })
 
-  it('returns detail with most recent history row', async () => {
-    const detail = await runCommand('exercises squat --json')
-    const history = await runCommand('exercises history squat --json')
-
-    const detailJson = JSON.parse(detail.stdout)
-    const historyJson = JSON.parse(history.stdout)
-
-    expect(detailJson.lastHistoryEntry).to.deep.equal(historyJson[0])
-  })
-
-  it('includes lastPerformed workout snapshot with set-level rows in detail json output', async () => {
+  it('returns detail with history rows', async () => {
     const {stdout} = await runCommand('exercises squat --json')
     const payload = JSON.parse(stdout)
 
-    expect(payload.lastPerformed).to.exist
-    expect(payload.lastPerformed.id).to.equal(4001)
-    expect(payload.lastPerformed.routine).to.equal('Day A')
-    expect(payload.lastPerformed.program).to.equal('Active Program')
-    expect(payload.lastPerformed.exercise.exerciseId).to.equal(1000)
-    expect(payload.lastPerformed.exercise.sets[0].id).to.equal(6002)
-    expect(payload.lastPerformed.exercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 231})
+    expect(payload.history).to.have.length.greaterThan(0)
+    expect(payload.history[0]).to.have.property('workoutId')
+    expect(payload.history[0]).to.have.property('sets').that.is.an('array')
+  })
+
+  it('returns set-level history rows and no duplicated lastPerformed in detail json output', async () => {
+    const {stdout} = await runCommand('exercises squat --json')
+    const payload = JSON.parse(stdout)
+
+    expect(payload).to.not.have.property('lastPerformed')
+    expect(payload.history[0]).to.include({
+      routine: 'Day A',
+      workoutId: 4001,
+    })
+    expect(payload.history[0].topWeight).to.deep.equal({unit: 'lb', value: 231})
+    expect(payload.history[0].sets[0]).to.include({
+      reps: 6,
+      setId: 6002,
+    })
+    expect(payload.history[0].sets[0].weight).to.deep.equal({unit: 'lb', value: 231})
   })
 
   it('supports min/max reps and weight filters in history mode', async () => {
-    const {stdout} = await runCommand('exercises history squat --min-reps 6 --max-reps 6 --min-weight 231 --max-weight 231 --json')
+    const {stdout} = await runCommand('exercises squat --min-reps 6 --max-reps 6 --min-weight 231 --max-weight 231 --json')
     const payload = JSON.parse(stdout)
 
-    expect(payload).to.have.length(1)
-    expect(payload[0].topWeight).to.deep.equal({unit: 'lb', value: 231})
-    expect(payload[0].topReps).to.equal(6)
+    expect(payload.history).to.have.length(1)
+    expect(payload.history[0].topWeight).to.deep.equal({unit: 'lb', value: 231})
+    expect(payload.history[0].topReps).to.equal(6)
+    expect(payload.history[0].sets).to.have.length(1)
+    expect(payload.history[0].sets[0].setId).to.equal(6002)
+    expect(payload.history[0].sets[0].weight).to.deep.equal({unit: 'lb', value: 231})
+    expect(payload.history[0].sets[0].reps).to.equal(6)
   })
 
   it('supports history program filter via period-linked program fallback', async () => {
-    const {stdout} = await runCommand('exercises history squat --program 1 --json')
+    const {stdout} = await runCommand('exercises squat --program 1 --json')
     const payload = JSON.parse(stdout)
 
-    expect(payload).to.have.length(2)
+    expect(payload.history).to.have.length(2)
   })
 
   it('supports history --all to disable limit', async () => {
-    const {stdout: limitedStdout} = await runCommand('exercises history squat --limit 1 --json')
-    const {stdout: allStdout} = await runCommand('exercises history squat --all --json')
+    const {stdout: limitedStdout} = await runCommand('exercises squat --limit 1 --json')
+    const {stdout: allStdout} = await runCommand('exercises squat --all --json')
     const limitedPayload = JSON.parse(limitedStdout)
     const allPayload = JSON.parse(allStdout)
 
-    expect(limitedPayload).to.have.length(1)
-    expect(allPayload).to.have.length(2)
+    expect(limitedPayload.history).to.have.length(1)
+    expect(allPayload.history).to.have.length(2)
   })
 
   it('shows unit suffix in table history output', async () => {
-    const {stdout} = await runCommand('exercises history squat')
+    const {stdout} = await runCommand('exercises squat')
     expect(stdout).to.contain('231 lb')
   })
 
@@ -150,9 +157,15 @@ describe('exercises', () => {
   })
 
   it('rejects --all with --limit in history mode', async () => {
-    const {error} = await runCommand('exercises history squat --all --limit 1')
+    const {error} = await runCommand('exercises squat --all --limit 1')
     expect(error).to.be.instanceOf(Error)
     expect(error?.message).to.contain('cannot also be provided')
+  })
+
+  it('rejects history filters without exercise selector', async () => {
+    const {error} = await runCommand('exercises --from 2026-01-01')
+    expect(error).to.be.instanceOf(Error)
+    expect(error?.message).to.contain('History filters require an exercise selector')
   })
 
   it('errors when db path is missing', async () => {
