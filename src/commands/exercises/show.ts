@@ -2,6 +2,7 @@ import {Args, Command, Flags} from '@oclif/core'
 import {format, isValid, parseISO} from 'date-fns'
 
 import {closeDb, openDb} from '../../lib/db.js'
+import {toJsonErrorPayload} from '../../lib/json-error.js'
 import {renderTable} from '../../lib/output.js'
 import {
   getExerciseDetail,
@@ -165,6 +166,9 @@ export default class ExercisesShow extends Command {
           })),
         ),
       )
+    } catch (error) {
+      if (this.jsonEnabled()) return toJsonErrorPayload(error)
+      throw error
     } finally {
       await closeDb(context)
     }

@@ -1,6 +1,7 @@
 import {Command, Flags} from '@oclif/core'
 
 import {closeDb, openDb} from '../../lib/db.js'
+import {toJsonErrorPayload} from '../../lib/json-error.js'
 import {renderTable} from '../../lib/output.js'
 import {listWorkouts} from '../../lib/repositories/workouts.js'
 
@@ -69,6 +70,9 @@ export default class Workouts extends Command {
           }),
         ),
       )
+    } catch (error) {
+      if (this.jsonEnabled()) return toJsonErrorPayload(error)
+      throw error
     } finally {
       await closeDb(context)
     }

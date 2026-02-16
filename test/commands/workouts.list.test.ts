@@ -51,4 +51,13 @@ describe('workouts list', () => {
     expect(error).to.be.instanceOf(Error)
     expect(error?.message).to.contain('cannot also be provided')
   })
+
+  it('returns actionable json error for invalid date range', async () => {
+    const {stdout} = await runCommand('workouts list --from 2026-02-01 --to 2026-01-01 --json')
+    const payload = JSON.parse(stdout)
+
+    expect(payload).to.deep.equal({
+      error: {message: 'Invalid date range: --from must be before or equal to --to.'},
+    })
+  })
 })
