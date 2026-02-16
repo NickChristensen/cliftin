@@ -45,4 +45,10 @@ describe('workouts list', () => {
     expect(error).to.be.instanceOf(Error)
     expect(error?.message).to.contain('cannot also be provided')
   })
+
+  it('rejects --on with --from/--to', async () => {
+    const {error} = await runCommand('workouts list --on 2026-01-01 --from 2026-01-01')
+    expect(error).to.be.instanceOf(Error)
+    expect(error?.message).to.contain('cannot also be provided')
+  })
 })

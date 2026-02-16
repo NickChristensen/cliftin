@@ -16,9 +16,9 @@ export default class Workouts extends Command {
   static flags = {
     limit: Flags.integer({description: 'Limit workouts (default: 25)', exclusive: ['all']}),
     all: Flags.boolean({description: 'Return all matching workouts (no limit)', exclusive: ['limit']}),
-    on: Flags.string({description: 'Single date YYYY-MM-DD'}),
-    from: Flags.string({description: 'Start date YYYY-MM-DD'}),
-    to: Flags.string({description: 'End date YYYY-MM-DD'}),
+    on: Flags.string({description: 'Single date YYYY-MM-DD', exclusive: ['from', 'to']}),
+    from: Flags.string({description: 'Start date YYYY-MM-DD', exclusive: ['on']}),
+    to: Flags.string({description: 'End date YYYY-MM-DD', exclusive: ['on']}),
     program: Flags.string({description: 'Filter by program id or name'}),
     routine: Flags.string({description: 'Filter by routine id or name'}),
   }
