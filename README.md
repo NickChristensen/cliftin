@@ -16,11 +16,11 @@ CLIftin: A read-only CLI for Liftin'
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g cliftin
+$ npm install -g @nickchristensen/cliftin
 $ cliftin COMMAND
 running command...
 $ cliftin (--version)
-cliftin/1.0.0 darwin-arm64 node-v24.13.1
+@nickchristensen/cliftin/1.0.0 darwin-arm64 node-v25.6.0
 $ cliftin --help [COMMAND]
 USAGE
   $ cliftin COMMAND

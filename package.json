@@ -1,5 +1,5 @@
 {
-  "name": "cliftin",
+  "name": "@nickchristensen/cliftin",
   "description": "CLIftin: A read-only CLI for Liftin'",
   "version": "1.0.0",
   "author": "Nick Christensen",
@@ -74,13 +74,16 @@
     }
   },
   "repository": "nickchristensen/cliftin",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
     "db:sync": "cp /Users/nick/Library/Containers/com.nstrm.Bello/Data/Library/Application\\ Support/Liftin/BelloDataModel.* ./data",
     "lint": "eslint",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",
-    "prepack": "oclif manifest && oclif readme",
+    "prepack": "npm run build && oclif manifest && oclif readme",
     "prepare": "simple-git-hooks",
     "test": "mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif readme && git add README.md"
