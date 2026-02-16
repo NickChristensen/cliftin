@@ -10,7 +10,6 @@
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
-    "@oclif/plugin-plugins": "^5",
     "better-sqlite3": "^12.6.2",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.4",
@@ -32,6 +31,7 @@
     "mocha": "^10",
     "oclif": "^4",
     "shx": "^0.3.3",
+    "simple-git-hooks": "^2.13.1",
     "ts-node": "^10",
     "typescript": "^5"
   },
@@ -58,8 +58,7 @@
     },
     "commands": "./dist/commands",
     "plugins": [
-      "@oclif/plugin-help",
-      "@oclif/plugin-plugins"
+      "@oclif/plugin-help"
     ],
     "topicSeparator": " ",
     "topics": {
@@ -82,8 +81,13 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",
     "prepack": "oclif manifest && oclif readme",
+    "prepare": "simple-git-hooks",
     "test": "mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif readme && git add README.md"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npm run build && npx oclif readme && git add README.md",
+    "pre-push": "npm run build && npm test"
   },
   "types": "dist/index.d.ts"
 }

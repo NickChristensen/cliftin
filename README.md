@@ -29,61 +29,72 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`cliftin hello PERSON`](#cliftin-hello-person)
-* [`cliftin hello world`](#cliftin-hello-world)
+* [`cliftin exercises list`](#cliftin-exercises-list)
+* [`cliftin exercises show SELECTOR`](#cliftin-exercises-show-selector)
 * [`cliftin help [COMMAND]`](#cliftin-help-command)
-* [`cliftin plugins`](#cliftin-plugins)
-* [`cliftin plugins add PLUGIN`](#cliftin-plugins-add-plugin)
-* [`cliftin plugins:inspect PLUGIN...`](#cliftin-pluginsinspect-plugin)
-* [`cliftin plugins install PLUGIN`](#cliftin-plugins-install-plugin)
-* [`cliftin plugins link PATH`](#cliftin-plugins-link-path)
-* [`cliftin plugins remove [PLUGIN]`](#cliftin-plugins-remove-plugin)
-* [`cliftin plugins reset`](#cliftin-plugins-reset)
-* [`cliftin plugins uninstall [PLUGIN]`](#cliftin-plugins-uninstall-plugin)
-* [`cliftin plugins unlink [PLUGIN]`](#cliftin-plugins-unlink-plugin)
-* [`cliftin plugins update`](#cliftin-plugins-update)
+* [`cliftin programs list`](#cliftin-programs-list)
+* [`cliftin programs show [SELECTOR]`](#cliftin-programs-show-selector)
+* [`cliftin workouts list`](#cliftin-workouts-list)
+* [`cliftin workouts show WORKOUTID`](#cliftin-workouts-show-workoutid)
 
-## `cliftin hello PERSON`
+## `cliftin exercises list`
 
-Say hello
+List exercises
 
 ```
 USAGE
-  $ cliftin hello PERSON -f <value>
-
-ARGUMENTS
-  PERSON  Person to say hello to
+  $ cliftin exercises list [--json] [--equipment <value>] [--muscle <value>] [--name <value>] [--sort
+    name|lastPerformed|timesPerformed]
 
 FLAGS
-  -f, --from=<value>  (required) Who is saying hello
+  --equipment=<value>  Filter by equipment name
+  --muscle=<value>     Filter by muscle group
+  --name=<value>       Filter by name contains
+  --sort=<option>      [default: name]
+                       <options: name|lastPerformed|timesPerformed>
+
+GLOBAL FLAGS
+  --json  Format output as json.
 
 DESCRIPTION
-  Say hello
-
-EXAMPLES
-  $ cliftin hello friend --from oclif
-  hello friend from oclif! (./src/commands/hello/index.ts)
+  List exercises
 ```
 
-_See code: [src/commands/hello/index.ts](https://github.com/nickchristensen/cliftin/blob/v0.0.0/src/commands/hello/index.ts)_
+_See code: [src/commands/exercises/list.ts](https://github.com/nickchristensen/cliftin/blob/v0.0.0/src/commands/exercises/list.ts)_
 
-## `cliftin hello world`
+## `cliftin exercises show SELECTOR`
 
-Say hello world
+Show one exercise detail and history
 
 ```
 USAGE
-  $ cliftin hello world
+  $ cliftin exercises show SELECTOR [--json] [--all | --limit <value>] [--from <value>] [--max-reps <value>]
+    [--max-weight <value>] [--min-reps <value>] [--min-weight <value>] [--program <value>] [--routine <value>] [--to
+    <value>]
+
+ARGUMENTS
+  SELECTOR  exercise id or name
+
+FLAGS
+  --all                 Return all matching history rows (no limit)
+  --from=<value>        History start date YYYY-MM-DD
+  --limit=<value>       History row limit (default: 100)
+  --max-reps=<value>    History max top reps
+  --max-weight=<value>  History max top weight
+  --min-reps=<value>    History min top reps
+  --min-weight=<value>  History min top weight
+  --program=<value>     History filter by program id or name
+  --routine=<value>     History filter by routine id or name
+  --to=<value>          History end date YYYY-MM-DD
+
+GLOBAL FLAGS
+  --json  Format output as json.
 
 DESCRIPTION
-  Say hello world
-
-EXAMPLES
-  $ cliftin hello world
-  hello world! (./src/commands/hello/world.ts)
+  Show one exercise detail and history
 ```
 
-_See code: [src/commands/hello/world.ts](https://github.com/nickchristensen/cliftin/blob/v0.0.0/src/commands/hello/world.ts)_
+_See code: [src/commands/exercises/show.ts](https://github.com/nickchristensen/cliftin/blob/v0.0.0/src/commands/exercises/show.ts)_
 
 ## `cliftin help [COMMAND]`
 
@@ -105,293 +116,91 @@ DESCRIPTION
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.37/src/commands/help.ts)_
 
-## `cliftin plugins`
+## `cliftin programs list`
 
-List installed plugins.
+List programs
 
 ```
 USAGE
-  $ cliftin plugins [--json] [--core]
-
-FLAGS
-  --core  Show core plugins.
+  $ cliftin programs list [--json]
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  List installed plugins.
-
-EXAMPLES
-  $ cliftin plugins
+  List programs
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.56/src/commands/plugins/index.ts)_
+_See code: [src/commands/programs/list.ts](https://github.com/nickchristensen/cliftin/blob/v0.0.0/src/commands/programs/list.ts)_
 
-## `cliftin plugins add PLUGIN`
+## `cliftin programs show [SELECTOR]`
 
-Installs a plugin into cliftin.
+Show one program hierarchy
 
 ```
 USAGE
-  $ cliftin plugins add PLUGIN... [--json] [-f] [-h] [-s | -v]
+  $ cliftin programs show [SELECTOR] [--json] [--active] [--current]
 
 ARGUMENTS
-  PLUGIN...  Plugin to install.
+  [SELECTOR]  program id or name
 
 FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
+  --active   Show active program detail
+  --current  Alias for --active
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Installs a plugin into cliftin.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the CLIFTIN_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the CLIFTIN_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ cliftin plugins add
-
-EXAMPLES
-  Install a plugin from npm registry.
-
-    $ cliftin plugins add myplugin
-
-  Install a plugin from a github url.
-
-    $ cliftin plugins add https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ cliftin plugins add someuser/someplugin
+  Show one program hierarchy
 ```
 
-## `cliftin plugins:inspect PLUGIN...`
+_See code: [src/commands/programs/show.ts](https://github.com/nickchristensen/cliftin/blob/v0.0.0/src/commands/programs/show.ts)_
 
-Displays installation properties of a plugin.
+## `cliftin workouts list`
+
+List workouts
 
 ```
 USAGE
-  $ cliftin plugins inspect PLUGIN...
-
-ARGUMENTS
-  PLUGIN...  [default: .] Plugin to inspect.
+  $ cliftin workouts list [--json] [--limit <value> | --all] [--on <value>] [--from <value>] [--to <value>]
+    [--program <value>] [--routine <value>]
 
 FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
+  --all              Return all matching workouts (no limit)
+  --from=<value>     Start date YYYY-MM-DD
+  --limit=<value>    Limit workouts (default: 25)
+  --on=<value>       Single date YYYY-MM-DD
+  --program=<value>  Filter by program id or name
+  --routine=<value>  Filter by routine id or name
+  --to=<value>       End date YYYY-MM-DD
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Displays installation properties of a plugin.
-
-EXAMPLES
-  $ cliftin plugins inspect myplugin
+  List workouts
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.56/src/commands/plugins/inspect.ts)_
+_See code: [src/commands/workouts/list.ts](https://github.com/nickchristensen/cliftin/blob/v0.0.0/src/commands/workouts/list.ts)_
 
-## `cliftin plugins install PLUGIN`
+## `cliftin workouts show WORKOUTID`
 
-Installs a plugin into cliftin.
+Show one workout with exercises and sets
 
 ```
 USAGE
-  $ cliftin plugins install PLUGIN... [--json] [-f] [-h] [-s | -v]
+  $ cliftin workouts show WORKOUTID [--json]
 
 ARGUMENTS
-  PLUGIN...  Plugin to install.
-
-FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
+  WORKOUTID  workout id
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Installs a plugin into cliftin.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the CLIFTIN_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the CLIFTIN_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ cliftin plugins add
-
-EXAMPLES
-  Install a plugin from npm registry.
-
-    $ cliftin plugins install myplugin
-
-  Install a plugin from a github url.
-
-    $ cliftin plugins install https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ cliftin plugins install someuser/someplugin
+  Show one workout with exercises and sets
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.56/src/commands/plugins/install.ts)_
-
-## `cliftin plugins link PATH`
-
-Links a plugin into the CLI for development.
-
-```
-USAGE
-  $ cliftin plugins link PATH [-h] [--install] [-v]
-
-ARGUMENTS
-  PATH  [default: .] path to plugin
-
-FLAGS
-  -h, --help          Show CLI help.
-  -v, --verbose
-      --[no-]install  Install dependencies after linking the plugin.
-
-DESCRIPTION
-  Links a plugin into the CLI for development.
-
-  Installation of a linked plugin will override a user-installed or core plugin.
-
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
-  command will override the user-installed or core plugin implementation. This is useful for development work.
-
-
-EXAMPLES
-  $ cliftin plugins link myplugin
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.56/src/commands/plugins/link.ts)_
-
-## `cliftin plugins remove [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ cliftin plugins remove [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ cliftin plugins unlink
-  $ cliftin plugins remove
-
-EXAMPLES
-  $ cliftin plugins remove myplugin
-```
-
-## `cliftin plugins reset`
-
-Remove all user-installed and linked plugins.
-
-```
-USAGE
-  $ cliftin plugins reset [--hard] [--reinstall]
-
-FLAGS
-  --hard       Delete node_modules and package manager related files in addition to uninstalling plugins.
-  --reinstall  Reinstall all plugins after uninstalling.
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.56/src/commands/plugins/reset.ts)_
-
-## `cliftin plugins uninstall [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ cliftin plugins uninstall [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ cliftin plugins unlink
-  $ cliftin plugins remove
-
-EXAMPLES
-  $ cliftin plugins uninstall myplugin
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.56/src/commands/plugins/uninstall.ts)_
-
-## `cliftin plugins unlink [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ cliftin plugins unlink [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ cliftin plugins unlink
-  $ cliftin plugins remove
-
-EXAMPLES
-  $ cliftin plugins unlink myplugin
-```
-
-## `cliftin plugins update`
-
-Update installed plugins.
-
-```
-USAGE
-  $ cliftin plugins update [-h] [-v]
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Update installed plugins.
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.56/src/commands/plugins/update.ts)_
+_See code: [src/commands/workouts/show.ts](https://github.com/nickchristensen/cliftin/blob/v0.0.0/src/commands/workouts/show.ts)_
 <!-- commandsstop -->
