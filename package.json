@@ -1,7 +1,7 @@
 {
   "name": "cliftin",
   "description": "CLIftin: A read-only CLI for Liftin'",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "author": "Nick Christensen",
   "bin": {
     "cliftin": "./bin/run.js"
