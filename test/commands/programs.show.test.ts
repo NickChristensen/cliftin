@@ -3,38 +3,27 @@ import {expect} from 'chai'
 
 import {createTestDb} from '../support/db.js'
 
-describe('programs', () => {
+describe('programs show', () => {
   const dbPath = createTestDb()
 
   beforeEach(() => {
     process.env.LIFTIN_DB_PATH = dbPath
   })
 
-  it('lists programs', async () => {
-    const {stdout} = await runCommand('programs --json')
-    const payload = JSON.parse(stdout)
-    const names = payload.map((item: {name: string}) => item.name)
-
-    expect(names).to.include('Active Program')
-    expect(names).to.not.include('Deleted Program')
-    expect(payload[0]).to.have.property('isActive')
-    expect(payload[0]).to.not.have.property('isDeleted')
-  })
-
   it('uses --active for detail mode', async () => {
-    const {stdout} = await runCommand('programs --active')
+    const {stdout} = await runCommand('programs show --active')
     expect(stdout).to.contain('[1] Active Program')
     expect(stdout).to.contain('week')
     expect(stdout).to.contain('220 lb')
   })
 
   it('supports --current alias', async () => {
-    const {stdout} = await runCommand('programs --current')
+    const {stdout} = await runCommand('programs show --current')
     expect(stdout).to.contain('[1] Active Program')
   })
 
   it('normalizes default planned rpe (16) to null', async () => {
-    const {stdout} = await runCommand('programs --active --json')
+    const {stdout} = await runCommand('programs show --active --json')
     const payload = JSON.parse(stdout)
     const firstSet = payload.weeks[0].routines[0].exercises[0].sets[0]
 
@@ -42,7 +31,7 @@ describe('programs', () => {
   })
 
   it('converts planned weights to pounds when unit preference is imperial', async () => {
-    const {stdout} = await runCommand('programs --active --json')
+    const {stdout} = await runCommand('programs show --active --json')
     const payload = JSON.parse(stdout)
     const squatExercise = payload.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1000)
     const benchExercise = payload.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
@@ -55,7 +44,7 @@ describe('programs', () => {
   })
 
   it('expands fallback planned sets to one row per ZSETS', async () => {
-    const {stdout} = await runCommand('programs --active --json')
+    const {stdout} = await runCommand('programs show --active --json')
     const payload = JSON.parse(stdout)
     const benchExercise = payload.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
 
@@ -64,7 +53,7 @@ describe('programs', () => {
   })
 
   it('orders exercises by routine relationship order', async () => {
-    const {stdout} = await runCommand('programs --active --json')
+    const {stdout} = await runCommand('programs show --active --json')
     const payload = JSON.parse(stdout)
     const exerciseIds = payload.weeks[0].routines[0].exercises.map((exercise: {id: number}) => exercise.id)
 
@@ -72,7 +61,7 @@ describe('programs', () => {
   })
 
   it('errors when selector does not exist', async () => {
-    const {error} = await runCommand('programs does-not-exist')
+    const {error} = await runCommand('programs show does-not-exist')
     expect(error).to.be.instanceOf(Error)
     expect(error?.message).to.contain('No records found for selector')
   })

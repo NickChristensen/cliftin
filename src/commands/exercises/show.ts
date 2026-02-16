@@ -1,27 +1,28 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {format, isValid, parseISO} from 'date-fns'
 
-import {closeDb, openDb} from '../lib/db.js'
-import {renderTable} from '../lib/output.js'
+import {closeDb, openDb} from '../../lib/db.js'
+import {renderTable} from '../../lib/output.js'
 import {
   getExerciseDetail,
   getExerciseHistoryRows,
   getExerciseHistoryWithSetsRows,
   getLastPerformedExerciseSnapshot,
-  listExercises,
   resolveExerciseSelector,
-} from '../lib/repositories/exercises.js'
-import {resolveExerciseWeightUnit, resolveGlobalWeightUnit, weightUnitLabel, withWeightUnit} from '../lib/units.js'
+} from '../../lib/repositories/exercises.js'
+import {resolveExerciseWeightUnit, resolveGlobalWeightUnit, weightUnitLabel, withWeightUnit} from '../../lib/units.js'
 
-function formatMusclesCell(primaryMuscles: null | string, secondaryMuscles: null | string): string {
-  const primary = primaryMuscles ?? 'n/a'
-  if (!secondaryMuscles) return primary
-  const secondaryLines = secondaryMuscles
-    .split(',')
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)
-    .join('\n')
-  return `${primary}\n${secondaryLines}`
+type ParsedFlags = {
+  all: boolean
+  from?: string
+  limit?: number
+  'max-reps'?: number
+  'max-weight'?: number
+  'min-reps'?: number
+  'min-weight'?: number
+  program?: string
+  routine?: string
+  to?: string
 }
 
 function formatWorkoutDate(dateIso: null | string): string {
@@ -30,38 +31,6 @@ function formatWorkoutDate(dateIso: null | string): string {
   const parsed = parseISO(dateIso)
   if (!isValid(parsed)) return dateIso
   return format(parsed, 'yyyy-MM-dd HH:mm')
-}
-
-type ParsedFlags = {
-  all: boolean
-  equipment?: string
-  from?: string
-  limit?: number
-  'max-reps'?: number
-  'max-weight'?: number
-  'min-reps'?: number
-  'min-weight'?: number
-  muscle?: string
-  name?: string
-  program?: string
-  routine?: string
-  sort: 'lastPerformed' | 'name' | 'timesPerformed'
-  to?: string
-}
-
-function hasHistoryFilters(flags: ParsedFlags): boolean {
-  return (
-    flags.all ||
-    flags.from !== undefined ||
-    flags.limit !== undefined ||
-    flags['max-reps'] !== undefined ||
-    flags['max-weight'] !== undefined ||
-    flags['min-reps'] !== undefined ||
-    flags['min-weight'] !== undefined ||
-    flags.program !== undefined ||
-    flags.routine !== undefined ||
-    flags.to !== undefined
-  )
 }
 
 function toHistoryFilters(flags: ParsedFlags) {
@@ -78,68 +47,31 @@ function toHistoryFilters(flags: ParsedFlags) {
   }
 }
 
-export default class Exercises extends Command {
+export default class ExercisesShow extends Command {
   static args = {
-    selector: Args.string({description: 'exercise id or name', required: false}),
+    selector: Args.string({description: 'exercise id or name', required: true}),
   }
-  static description = 'List exercises, or show one exercise detail and history'
+  static description = 'Show one exercise detail and history'
   static enableJsonFlag = true
-  static sortOptions = ['name', 'lastPerformed', 'timesPerformed'] as const
   static flags = {
     all: Flags.boolean({description: 'Return all matching history rows (no limit)', exclusive: ['limit']}),
-    equipment: Flags.string({description: 'Filter by equipment name'}),
     from: Flags.string({description: 'History start date YYYY-MM-DD'}),
     limit: Flags.integer({description: 'History row limit (default: 100)', exclusive: ['all']}),
     'max-reps': Flags.integer({description: 'History max top reps'}),
     'max-weight': Flags.integer({description: 'History max top weight'}),
     'min-reps': Flags.integer({description: 'History min top reps'}),
     'min-weight': Flags.integer({description: 'History min top weight'}),
-    muscle: Flags.string({description: 'Filter by muscle group'}),
-    name: Flags.string({description: 'Filter by name contains'}),
     program: Flags.string({description: 'History filter by program id or name'}),
     routine: Flags.string({description: 'History filter by routine id or name'}),
-    sort: Flags.option({
-      default: 'name',
-      options: Exercises.sortOptions,
-    })(),
     to: Flags.string({description: 'History end date YYYY-MM-DD'}),
   }
 
   async run(): Promise<unknown | void> {
-    const {args, flags} = await this.parse(Exercises)
+    const {args, flags} = await this.parse(ExercisesShow)
     const parsedFlags = flags as ParsedFlags
     const context = openDb()
 
     try {
-      if (!args.selector) {
-        if (hasHistoryFilters(parsedFlags)) {
-          this.error('History filters require an exercise selector. Use: cliftin exercises <selector> [history flags]')
-        }
-
-        const exercises = await listExercises(context.db, {
-          equipment: parsedFlags.equipment,
-          muscle: parsedFlags.muscle,
-          name: parsedFlags.name,
-          sort: parsedFlags.sort,
-        })
-
-        if (this.jsonEnabled()) return exercises
-
-        this.log(
-          renderTable(
-            exercises.map((exercise) => ({
-              equipment: exercise.equipment,
-              id: exercise.id,
-              lastPerformed: exercise.lastPerformed,
-              muscles: formatMusclesCell(exercise.primaryMuscles, exercise.secondaryMuscles),
-              name: exercise.name,
-              timesPerformed: exercise.timesPerformed,
-            })),
-          ),
-        )
-        return
-      }
-
       const exerciseId = await resolveExerciseSelector(context.db, args.selector)
       const detail = await getExerciseDetail(context.db, exerciseId)
       const historyFilters = toHistoryFilters(parsedFlags)
