@@ -111,6 +111,13 @@ describe('exercises', () => {
     const {error} = await runCommand('exercises ben')
     expect(error).to.be.instanceOf(Error)
     expect(error?.message).to.contain('ambiguous')
+    expect(error?.message).to.contain('Bench Press')
+  })
+
+  it('resolves built-in exercise by human-friendly name', async () => {
+    const {stdout} = await runCommand('exercises "Bench Press" --json')
+    const payload = JSON.parse(stdout)
+    expect(payload.id).to.equal(1001)
   })
 
   it('does not support include-deleted list flag', async () => {

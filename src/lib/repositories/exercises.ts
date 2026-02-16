@@ -35,8 +35,55 @@ function asBool(value: null | number): boolean {
   return value === 1
 }
 
+type ExerciseSelectorRow = {
+  id: number
+  isUserCreated: null | number
+  name: null | string
+}
+
+function renderSelectorCandidateList(candidates: ExerciseSelectorRow[]): string {
+  return candidates
+    .map((candidate) => ({
+      id: candidate.id,
+      name: formatExerciseDisplayName(candidate.name, asBool(candidate.isUserCreated)),
+    }))
+    .map((candidate) => `${candidate.id}:${candidate.name}`)
+    .join(', ')
+}
+
 export async function resolveExerciseSelector(db: Kysely<DatabaseSchema>, selector: string): Promise<number> {
-  return resolveIdOrName(db, 'ZEXERCISEINFORMATION', selector)
+  if (/^\d+$/.test(selector)) return Number(selector)
+
+  const normalizedSelector = selector.toLowerCase().trim()
+  const rows = await db
+    .selectFrom('ZEXERCISEINFORMATION')
+    .select(['Z_PK as id', 'ZISUSERCREATED as isUserCreated', 'ZNAME as name'])
+    .where('ZSOFTDELETED', 'is not', 1)
+    .execute()
+
+  const exact = rows.filter((row) => {
+    const rawName = (row.name ?? '').toLowerCase()
+    const displayName = formatExerciseDisplayName(row.name, asBool(row.isUserCreated)).toLowerCase()
+    return rawName === normalizedSelector || displayName === normalizedSelector
+  })
+
+  if (exact.length === 1) return exact[0].id
+  if (exact.length > 1) {
+    throw new Error(`Selector "${selector}" is ambiguous: ${renderSelectorCandidateList(exact)}`)
+  }
+
+  const partial = rows.filter((row) => {
+    const rawName = (row.name ?? '').toLowerCase()
+    const displayName = formatExerciseDisplayName(row.name, asBool(row.isUserCreated)).toLowerCase()
+    return rawName.includes(normalizedSelector) || displayName.includes(normalizedSelector)
+  })
+
+  if (partial.length === 1) return partial[0].id
+  if (partial.length > 1) {
+    throw new Error(`Selector "${selector}" is ambiguous: ${renderSelectorCandidateList(partial)}`)
+  }
+
+  throw new Error(`No records found for selector: ${selector}`)
 }
 
 export async function listExercises(
