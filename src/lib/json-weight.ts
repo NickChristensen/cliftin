@@ -40,7 +40,11 @@ export function serializeWorkoutDetailWithWeightUnits(detail: WorkoutDetail, uni
     exercises: detail.exercises.map((exercise) => ({
       ...exercise,
       sets: exercise.sets.map((set) => ({
-        ...set,
+        reps: set.reps,
+        rpe: set.rpe,
+        setId: set.id,
+        timeSeconds: set.timeSeconds,
+        volume: set.volume,
         weight: withWeightUnit(set.weight, unitPreference),
       })),
     })),

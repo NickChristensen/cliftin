@@ -30,7 +30,7 @@ describe('workouts show', () => {
     expect(exerciseOrder).to.deep.equal([5002, 5000])
     expect(benchExercise.exerciseId).to.equal(1001)
     expect(squatExercise.exerciseId).to.equal(1000)
-    expect(benchExercise.sets.map((set: {id: number}) => set.id)).to.deep.equal([6004, 6003])
+    expect(benchExercise.sets.map((set: {setId: number}) => set.setId)).to.deep.equal([6004, 6003])
     expect(squatExercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 220})
   })
 })

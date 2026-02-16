@@ -163,7 +163,7 @@ List workouts
 
 ```
 USAGE
-  $ cliftin workouts list [--json] [--limit <value> | --all] [--on <value>] [--from <value>] [--to <value>]
+  $ cliftin workouts list [--json] [--limit <value> | --all] [--on <value> | --from <value> | --to <value>]
     [--program <value>] [--routine <value>]
 
 FLAGS
