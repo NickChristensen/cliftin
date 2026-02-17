@@ -1,5 +1,5 @@
 {
-  "name": "@nick-gh/cliftin",
+  "name": "cliftin",
   "description": "CLIftin: A read-only CLI for Liftin'",
   "version": "1.0.1",
   "author": "Nick Christensen",
@@ -74,9 +74,6 @@
     }
   },
   "repository": "nickchristensen/cliftin",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
     "db:sync": "cp /Users/nick/Library/Containers/com.nstrm.Bello/Data/Library/Application\\ Support/Liftin/BelloDataModel.* ./data",
