@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@nickchristensen'
+          scope: '@nick-gh'
 
       - name: Install deps
         run: npm ci

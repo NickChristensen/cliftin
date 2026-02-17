@@ -16,11 +16,11 @@ CLIftin: A read-only CLI for Liftin'
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g @nickchristensen/cliftin
+$ npm install -g @nick-gh/cliftin
 $ cliftin COMMAND
 running command...
 $ cliftin (--version)
-@nickchristensen/cliftin/1.0.0 darwin-arm64 node-v25.6.0
+@nick-gh/cliftin/1.0.1 darwin-arm64 node-v25.6.0
 $ cliftin --help [COMMAND]
 USAGE
   $ cliftin COMMAND
@@ -60,7 +60,7 @@ DESCRIPTION
   List exercises
 ```
 
-_See code: [src/commands/exercises/list.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.0/src/commands/exercises/list.ts)_
+_See code: [src/commands/exercises/list.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.1/src/commands/exercises/list.ts)_
 
 ## `cliftin exercises show SELECTOR`
 
@@ -94,7 +94,7 @@ DESCRIPTION
   Show one exercise detail and history
 ```
 
-_See code: [src/commands/exercises/show.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.0/src/commands/exercises/show.ts)_
+_See code: [src/commands/exercises/show.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.1/src/commands/exercises/show.ts)_
 
 ## `cliftin help [COMMAND]`
 
@@ -131,7 +131,7 @@ DESCRIPTION
   List programs
 ```
 
-_See code: [src/commands/programs/list.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.0/src/commands/programs/list.ts)_
+_See code: [src/commands/programs/list.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.1/src/commands/programs/list.ts)_
 
 ## `cliftin programs show [SELECTOR]`
 
@@ -155,7 +155,7 @@ DESCRIPTION
   Show one program hierarchy
 ```
 
-_See code: [src/commands/programs/show.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.0/src/commands/programs/show.ts)_
+_See code: [src/commands/programs/show.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.1/src/commands/programs/show.ts)_
 
 ## `cliftin workouts list`
 
@@ -182,7 +182,7 @@ DESCRIPTION
   List workouts
 ```
 
-_See code: [src/commands/workouts/list.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.0/src/commands/workouts/list.ts)_
+_See code: [src/commands/workouts/list.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.1/src/commands/workouts/list.ts)_
 
 ## `cliftin workouts show WORKOUTID`
 
@@ -202,5 +202,5 @@ DESCRIPTION
   Show one workout with exercises and sets
 ```
 
-_See code: [src/commands/workouts/show.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.0/src/commands/workouts/show.ts)_
+_See code: [src/commands/workouts/show.ts](https://github.com/nickchristensen/cliftin/blob/v1.0.1/src/commands/workouts/show.ts)_
 <!-- commandsstop -->
