@@ -57,6 +57,9 @@
       "flagSortOrder": "none"
     },
     "commands": "./dist/commands",
+    "hooks": {
+      "init": "./dist/hooks/init"
+    },
     "plugins": [
       "@oclif/plugin-help"
     ],
