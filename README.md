@@ -47,7 +47,7 @@ USAGE
 * [`cliftin programs list`](#cliftin-programs-list)
 * [`cliftin programs show [SELECTOR]`](#cliftin-programs-show-selector)
 * [`cliftin workouts list`](#cliftin-workouts-list)
-* [`cliftin workouts show WORKOUTID`](#cliftin-workouts-show-workoutid)
+* [`cliftin workouts show [WORKOUTID]`](#cliftin-workouts-show-workoutid)
 
 ## `cliftin exercises list`
 
@@ -151,14 +151,10 @@ Show one program hierarchy
 
 ```
 USAGE
-  $ cliftin programs show [SELECTOR] [--json] [--active] [--current]
+  $ cliftin programs show [SELECTOR] [--json]
 
 ARGUMENTS
-  [SELECTOR]  program id or name
-
-FLAGS
-  --active   Show active program detail
-  --current  Alias for --active
+  [SELECTOR]  program id or name (default: active program)
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -196,16 +192,16 @@ DESCRIPTION
 
 _See code: [src/commands/workouts/list.ts](https://github.com/nickchristensen/cliftin/blob/v1.1.1/src/commands/workouts/list.ts)_
 
-## `cliftin workouts show WORKOUTID`
+## `cliftin workouts show [WORKOUTID]`
 
 Show one workout with exercises and sets
 
 ```
 USAGE
-  $ cliftin workouts show WORKOUTID [--json]
+  $ cliftin workouts show [WORKOUTID] [--json]
 
 ARGUMENTS
-  WORKOUTID  workout id
+  [WORKOUTID]  workout id (default: latest workout)
 
 GLOBAL FLAGS
   --json  Format output as json.

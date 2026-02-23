@@ -72,7 +72,7 @@ export async function resolveProgramSelector(
     return fallbackRows[0].id
   }
 
-  if (!selector) throw new Error('Program selector is required unless --active/--current is set.')
+  if (!selector) throw new Error('Program selector is required.')
 
   const programId = await resolveIdOrName(db, 'ZWORKOUTPLAN', selector)
   const nonDeleted = await db

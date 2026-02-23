@@ -1,4 +1,4 @@
-import {Args, Command, Flags} from '@oclif/core'
+import {Args, Command} from '@oclif/core'
 
 import {closeDb, openDb} from '../../lib/db.js'
 import {serializeProgramDetailWithWeightUnits} from '../../lib/json-weight.js'
@@ -57,31 +57,18 @@ function buildProgramRows(
 
 export default class ProgramsShow extends Command {
   static args = {
-    selector: Args.string({description: 'program id or name', ignoreStdin: true, required: false}),
+    selector: Args.string({description: 'program id or name (default: active program)', ignoreStdin: true, required: false}),
   }
   static description = 'Show one program hierarchy'
   static enableJsonFlag = true
-  static flags = {
-    active: Flags.boolean({description: 'Show active program detail'}),
-    current: Flags.boolean({description: 'Alias for --active'}),
-  }
+  static flags = {}
 
   async run(): Promise<unknown | void> {
-    const {args, flags} = await this.parse(ProgramsShow)
+    const {args} = await this.parse(ProgramsShow)
     const context = openDb()
 
     try {
-      const useActive = flags.active || flags.current
-
-      if (args.selector && useActive) {
-        throw new Error('Use either a selector or --active/--current, not both.')
-      }
-
-      if (!args.selector && !useActive) {
-        throw new Error('Provide a selector or use --active/--current.')
-      }
-
-      const programId = await resolveProgramSelector(context.db, args.selector, Boolean(useActive))
+      const programId = await resolveProgramSelector(context.db, args.selector, !args.selector)
       const detail = await getProgramDetail(context.db, programId)
       const unitPreference = await resolveProgramWeightUnit(context.db, detail.program.id)
       const unitLabel = weightUnitLabel(unitPreference)
@@ -91,7 +78,8 @@ export default class ProgramsShow extends Command {
       }
 
       this.log(`[${detail.program.id}] ${detail.program.name}`)
-      this.log(`Active: ${detail.program.isActive}  Template: ${detail.program.isTemplate}`)
+      this.log(`Active: ${detail.program.isActive}`)
+      this.log(`Template: ${detail.program.isTemplate}`)
       this.log('')
       const programRows = buildProgramRows(detail.weeks, unitLabel)
       const renderedTable = renderTable(programRows).replace(/^\n+/, '')
