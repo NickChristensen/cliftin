@@ -8,8 +8,7 @@
 ## Runtime and Environment
 - Node: target `>=24` (current dev setup uses `fnm`; keep project version files current).
 - DB path must come from env var only: `LIFTIN_DB_PATH`.
-- Local development expects `.env.local` with:
-  - `LIFTIN_DB_PATH=/Users/nick/code/cliftin/data/BelloDataModel.sqlite`
+- Local development expects `.env.local` with local copy of database.
 - Missing/invalid DB path should fail fast with actionable error text.
 
 ## CLI Surface (Current)

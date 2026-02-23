@@ -5,28 +5,40 @@ CLIftin: A read-only CLI for Liftin'
 
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/cliftin.svg)](https://npmjs.org/package/cliftin)
-[![Downloads/week](https://img.shields.io/npm/dw/cliftin.svg)](https://npmjs.org/package/cliftin)
+[![Version](https://img.shields.io/npm/v/@nickchristensen/cliftin.svg)](https://npmjs.org/package/cliftin)
+[![Downloads/week](https://img.shields.io/npm/dw/@nickchristensen/cliftin.svg)](https://npmjs.org/package/cliftin)
 
 
 <!-- toc -->
+* [Configuration](#configuration)
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
+
+# Configuration
+
+cliftin reads your Liftin database directly. By default it looks for the Liftin app's SQLite file at:
+
+```
+$HOME/Library/Containers/com.nstrm.Bello/Data/Library/Application Support/Liftin/BelloDataModel.sqlite
+```
+
+To use a different path, set `LIFTIN_DB_PATH` in your environment or in a `.env.local` file at the project root:
+
+```sh
+LIFTIN_DB_PATH=/path/to/BelloDataModel.sqlite
+```
+
 # Usage
-<!-- usage -->
 ```sh-session
 $ npm install -g @nickchristensen/cliftin
 $ cliftin COMMAND
 running command...
-$ cliftin (--version)
-@nickchristensen/cliftin/1.0.2 darwin-arm64 node-v25.6.0
 $ cliftin --help [COMMAND]
 USAGE
   $ cliftin COMMAND
 ...
 ```
-<!-- usagestop -->
 # Commands
 <!-- commands -->
 * [`cliftin exercises list`](#cliftin-exercises-list)

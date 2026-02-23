@@ -72,13 +72,13 @@ describe('exercises list', () => {
     expect(error?.message).to.contain('Nonexistent flag: --from')
   })
 
-  it('errors when db path is missing', async () => {
+  it('errors when db path is not readable', async () => {
     const previousDbPath = process.env.LIFTIN_DB_PATH
     try {
-      delete process.env.LIFTIN_DB_PATH
+      process.env.LIFTIN_DB_PATH = '/nonexistent/path/BelloDataModel.sqlite'
       const {error} = await runCommand('exercises list')
       expect(error).to.be.instanceOf(Error)
-      expect(error?.message).to.contain('Missing LIFTIN_DB_PATH')
+      expect(error?.message).to.contain('Database file is not readable')
     } finally {
       if (previousDbPath === undefined) {
         delete process.env.LIFTIN_DB_PATH

@@ -13,17 +13,13 @@ function loadEnv(): void {
 export function getDbPath(): string {
   loadEnv()
 
-  const path = process.env.LIFTIN_DB_PATH
-  if (!path) {
-    throw new Error(
-      'Missing LIFTIN_DB_PATH. Add it to .env.local, for example: LIFTIN_DB_PATH=/Users/nick/code/cliftin/data/BelloDataModel.sqlite',
-    )
-  }
+  const defaultPath = `${process.env.HOME}/Library/Containers/com.nstrm.Bello/Data/Library/Application Support/Liftin/BelloDataModel.sqlite`
+  const path = process.env.LIFTIN_DB_PATH ?? defaultPath
 
   try {
     accessSync(path, constants.R_OK)
   } catch {
-    throw new Error(`Database file is not readable at LIFTIN_DB_PATH=${path}`)
+    throw new Error(`Database file is not readable at path=${path}`)
   }
 
   return path
