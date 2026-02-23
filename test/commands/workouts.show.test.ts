@@ -10,6 +10,11 @@ describe('workouts show', () => {
     process.env.LIFTIN_DB_PATH = dbPath
   })
 
+  it('defaults to latest workout', async () => {
+    const {stdout} = await runCommand('workouts show')
+    expect(stdout).to.contain('[4001]')
+  })
+
   it('shows workout detail', async () => {
     const {stdout} = await runCommand('workouts show 4000')
     expect(stdout).to.contain('[4000] Day A')

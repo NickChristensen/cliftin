@@ -97,7 +97,12 @@ export async function getWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: nu
     .selectFrom('ZEXERCISERESULT as er')
     .leftJoin('ZEXERCISECONFIGURATION as ec', 'ec.Z_PK', 'er.ZCONFIGURATION')
     .leftJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'ec.ZINFORMATION')
-    .select(['er.Z_PK as exerciseResultId', 'ei.Z_PK as exerciseId', 'ei.ZISUSERCREATED as isUserCreated', 'ei.ZNAME as exerciseName'])
+    .select([
+      'er.Z_PK as exerciseResultId',
+      'ei.Z_PK as exerciseId',
+      'ei.ZISUSERCREATED as isUserCreated',
+      'ei.ZNAME as exerciseName',
+    ])
     .where('er.ZWORKOUT', '=', workoutId)
     .orderBy('er.Z_FOK_WORKOUT', 'asc')
     .orderBy('er.Z_PK', 'asc')

@@ -4,7 +4,7 @@ import {format, isValid, parseISO} from 'date-fns'
 import {closeDb, openDb} from '../../lib/db.js'
 import {serializeWorkoutDetailWithWeightUnits} from '../../lib/json-weight.js'
 import {renderTable} from '../../lib/output.js'
-import {getWorkoutDetail} from '../../lib/repositories/workouts.js'
+import {getWorkoutDetail, listWorkouts} from '../../lib/repositories/workouts.js'
 import {resolveGlobalWeightUnit, weightUnitLabel} from '../../lib/units.js'
 
 function formatDurationMinutes(durationSeconds: null | number): string {
@@ -22,7 +22,7 @@ function formatWorkoutDate(dateIso: null | string): string {
 
 export default class WorkoutsShow extends Command {
   static args = {
-    workoutId: Args.string({description: 'workout id', required: true}),
+    workoutId: Args.string({description: 'workout id (default: latest workout)', required: false}),
   }
   static description = 'Show one workout with exercises and sets'
   static enableJsonFlag = true
@@ -32,11 +32,17 @@ export default class WorkoutsShow extends Command {
     const context = openDb()
 
     try {
-      if (!/^\d+$/.test(args.workoutId)) {
-        throw new Error('Workout detail requires numeric workout id.')
+      if (args.workoutId !== undefined && !/^\d+$/.test(args.workoutId)) {
+        throw new Error('Workout id must be numeric.')
       }
 
-      const detail = await getWorkoutDetail(context.db, Number(args.workoutId))
+      const workoutId = args.workoutId
+        ? Number(args.workoutId)
+        : await listWorkouts(context.db, {limit: 1}).then((rows) => {
+            if (rows.length === 0) throw new Error('No workouts found.')
+            return rows[0].id
+          })
+      const detail = await getWorkoutDetail(context.db, workoutId)
       const unitPreference = await resolveGlobalWeightUnit(context.db)
       const unitLabel = weightUnitLabel(unitPreference)
 
