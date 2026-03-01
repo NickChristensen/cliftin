@@ -22,7 +22,7 @@ function formatWorkoutDate(dateIso: null | string): string {
 
 export default class WorkoutsShow extends Command {
   static args = {
-    workoutId: Args.string({description: 'workout id (default: latest workout)', required: false}),
+    workoutId: Args.string({description: 'workout id (default: latest workout)', ignoreStdin: true, required: false}),
   }
   static description = 'Show one workout with exercises and sets'
   static enableJsonFlag = true
