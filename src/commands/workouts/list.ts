@@ -40,12 +40,13 @@ export default class Workouts extends Command {
       })
 
       if (this.jsonEnabled()) {
-        return workouts.map((workout) => ({
+        return workouts.map(({duration, id, ...workout}) => ({
           ...workout,
           duration: {
             unit: 'seconds',
-            value: workout.duration,
+            value: duration,
           },
+          workoutId: id,
         }))
       }
 

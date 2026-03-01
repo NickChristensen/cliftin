@@ -18,6 +18,8 @@ describe('programs list', () => {
     expect(names).to.include('Active Program')
     expect(names).to.not.include('Deleted Program')
     expect(payload[0]).to.have.property('isActive')
+    expect(payload[0]).to.have.property('programId')
+    expect(payload[0]).to.not.have.property('id')
     expect(payload[0]).to.not.have.property('isDeleted')
   })
 })

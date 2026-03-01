@@ -31,6 +31,8 @@ describe('workouts show', () => {
     const benchExercise = payload.exercises.find((exercise: {exerciseResultId: number}) => exercise.exerciseResultId === 5002)
     const squatExercise = payload.exercises.find((exercise: {exerciseResultId: number}) => exercise.exerciseResultId === 5000)
 
+    expect(payload).to.have.property('workoutId', 4000)
+    expect(payload).to.not.have.property('id')
     expect(payload.duration).to.deep.equal({unit: 'seconds', value: 3600})
     expect(exerciseOrder).to.deep.equal([5002, 5000])
     expect(benchExercise.exerciseId).to.equal(1001)

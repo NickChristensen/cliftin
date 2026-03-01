@@ -41,7 +41,12 @@ export default class Exercises extends Command {
         sort: flags.sort,
       })
 
-      if (this.jsonEnabled()) return exercises
+      if (this.jsonEnabled()) {
+        return exercises.map(({id, ...exercise}) => ({
+          ...exercise,
+          exerciseId: id,
+        }))
+      }
 
       this.log(
         renderTable(

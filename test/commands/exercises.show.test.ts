@@ -14,6 +14,8 @@ describe('exercises show', () => {
     const {stdout} = await runCommand('exercises show squat --json')
     const payload = JSON.parse(stdout)
 
+    expect(payload).to.have.property('exerciseId', 1000)
+    expect(payload).to.not.have.property('id')
     expect(payload.history).to.have.length.greaterThan(0)
     expect(payload.history[0]).to.have.property('workoutId')
     expect(payload.history[0]).to.have.property('sets').that.is.an('array')
@@ -97,7 +99,7 @@ describe('exercises show', () => {
   it('resolves built-in exercise by human-friendly name', async () => {
     const {stdout} = await runCommand('exercises show "Bench Press" --json')
     const payload = JSON.parse(stdout)
-    expect(payload.id).to.equal(1001)
+    expect(payload.exerciseId).to.equal(1001)
   })
 
   it('rejects --all with --limit in history mode', async () => {

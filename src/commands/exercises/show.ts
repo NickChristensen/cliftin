@@ -90,20 +90,12 @@ export default class ExercisesShow extends Command {
           topWeight: withWeightUnit(row.topWeight, historyUnitPreference),
         }))
 
+        const {id: detailId, ...exerciseDetail} = detail
+
         return {
-          defaultProgressMetric: detail.defaultProgressMetric,
-          equipment: detail.equipment,
+          exerciseId: detailId,
+          ...exerciseDetail,
           history,
-          id: detail.id,
-          name: detail.name,
-          perceptionScale: detail.perceptionScale,
-          primaryMuscles: detail.primaryMuscles,
-          recentRoutines: detail.recentRoutines,
-          secondaryMuscles: detail.secondaryMuscles,
-          supports1RM: detail.supports1RM,
-          timerBased: detail.timerBased,
-          totalRoutines: detail.totalRoutines,
-          totalWorkouts: detail.totalWorkouts,
         }
       }
 

@@ -15,7 +15,12 @@ export default class Programs extends Command {
     try {
       const programs = await listPrograms(context.db)
 
-      if (this.jsonEnabled()) return programs
+      if (this.jsonEnabled()) {
+        return programs.map(({id, ...program}) => ({
+          ...program,
+          programId: id,
+        }))
+      }
 
       this.log(
         renderTable(

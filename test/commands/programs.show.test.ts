@@ -23,25 +23,31 @@ describe('programs show', () => {
     const firstSet = payload.weeks[0].routines[0].exercises[0].sets[0]
 
     expect(firstSet.rpe).to.equal(null)
+    expect(firstSet).to.have.property('setId')
+    expect(firstSet).to.not.have.property('id')
   })
 
   it('converts planned weights to pounds when unit preference is imperial', async () => {
     const {stdout} = await runCommand('programs show --json')
     const payload = JSON.parse(stdout)
-    const squatExercise = payload.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1000)
-    const benchExercise = payload.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
+    const squatExercise = payload.weeks[0].routines[0].exercises.find((exercise: {exerciseId: number}) => exercise.exerciseId === 1000)
+    const benchExercise = payload.weeks[0].routines[0].exercises.find((exercise: {exerciseId: number}) => exercise.exerciseId === 1001)
 
     expect(squatExercise).to.exist
     expect(squatExercise.plannedWeight).to.deep.equal({unit: 'lb', value: 220})
     expect(squatExercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 220})
     expect(squatExercise.sets[1].weight).to.deep.equal({unit: 'lb', value: 225.5})
     expect(benchExercise.name).to.equal('Bench Press')
+    expect(payload.program).to.have.property('programId', 1)
+    expect(payload.program).to.not.have.property('id')
+    expect(payload.weeks[0]).to.have.property('weekId', 10)
+    expect(payload.weeks[0].routines[0]).to.have.property('routineId', 100)
   })
 
   it('expands fallback planned sets to one row per ZSETS', async () => {
     const {stdout} = await runCommand('programs show --json')
     const payload = JSON.parse(stdout)
-    const benchExercise = payload.weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 1001)
+    const benchExercise = payload.weeks[0].routines[0].exercises.find((exercise: {exerciseId: number}) => exercise.exerciseId === 1001)
 
     expect(benchExercise.sets).to.have.length(3)
     expect(benchExercise.sets[0]).to.not.have.property('setIndex')
@@ -50,7 +56,7 @@ describe('programs show', () => {
   it('orders exercises by routine relationship order', async () => {
     const {stdout} = await runCommand('programs show --json')
     const payload = JSON.parse(stdout)
-    const exerciseIds = payload.weeks[0].routines[0].exercises.map((exercise: {id: number}) => exercise.id)
+    const exerciseIds = payload.weeks[0].routines[0].exercises.map((exercise: {exerciseId: number}) => exercise.exerciseId)
 
     expect(exerciseIds).to.deep.equal([1001, 1000])
   })

@@ -22,13 +22,15 @@ describe('exercises list', () => {
     expect(squat).to.have.property('timesPerformed')
     expect(squat).to.have.property('secondaryMuscles', 'Glutes')
     expect(squat).to.have.property('equipment', 'Smith Machine')
-    expect(payload.find((item: {id: number}) => item.id === 1003)).to.equal(undefined)
+    expect(squat).to.have.property('exerciseId', 1000)
+    expect(squat).to.not.have.property('id')
+    expect(payload.find((item: {exerciseId: number}) => item.exerciseId === 1003)).to.equal(undefined)
   })
 
   it('filters list by secondary muscles with --muscle', async () => {
     const {stdout} = await runCommand('exercises list --muscle glutes --json')
     const payload = JSON.parse(stdout)
-    const ids = payload.map((item: {id: number}) => item.id)
+    const ids = payload.map((item: {exerciseId: number}) => item.exerciseId)
 
     expect(ids).to.include(1000)
   })
@@ -36,21 +38,21 @@ describe('exercises list', () => {
   it('sorts list by name by default', async () => {
     const {stdout} = await runCommand('exercises list --json')
     const payload = JSON.parse(stdout)
-    const ids = payload.map((item: {id: number}) => item.id)
+    const ids = payload.map((item: {exerciseId: number}) => item.exerciseId)
     expect(ids).to.deep.equal([1002, 1001, 1000])
   })
 
   it('sorts list by timesPerformed when requested', async () => {
     const {stdout} = await runCommand('exercises list --sort timesPerformed --json')
     const payload = JSON.parse(stdout)
-    const ids = payload.map((item: {id: number}) => item.id)
+    const ids = payload.map((item: {exerciseId: number}) => item.exerciseId)
     expect(ids).to.deep.equal([1000, 1001, 1002])
   })
 
   it('sorts list by lastPerformed when requested', async () => {
     const {stdout} = await runCommand('exercises list --sort lastPerformed --json')
     const payload = JSON.parse(stdout)
-    const ids = payload.map((item: {id: number}) => item.id)
+    const ids = payload.map((item: {exerciseId: number}) => item.exerciseId)
     expect(ids).to.deep.equal([1000, 1001, 1002])
   })
 

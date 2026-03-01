@@ -21,6 +21,8 @@ describe('workouts list', () => {
     const {stdout} = await runCommand('workouts list --json')
     const payload = JSON.parse(stdout)
 
+    expect(payload[0]).to.have.property('workoutId')
+    expect(payload[0]).to.not.have.property('id')
     expect(payload[0].duration).to.deep.equal({unit: 'seconds', value: 3500})
   })
 
