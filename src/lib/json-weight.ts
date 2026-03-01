@@ -1,4 +1,4 @@
-import {ExerciseHistoryRow, ProgramDetailTree, WorkoutDetail} from './types.js'
+import {ExerciseHistoryRow, NextWorkoutDetail, ProgramDetailTree, WorkoutDetail} from './types.js'
 import {UnitPreference, withWeightUnit} from './units.js'
 
 export function serializeExerciseHistoryRowsWithWeightUnits(
@@ -31,6 +31,26 @@ export function serializeProgramDetailWithWeightUnits(
         })),
       })),
     })),
+  }
+}
+
+export function serializeNextWorkoutDetailWithWeightUnits(
+  detail: NextWorkoutDetail,
+  unitPreference: UnitPreference,
+): unknown {
+  return {
+    ...detail,
+    routine: {
+      ...detail.routine,
+      exercises: detail.routine.exercises.map((exercise) => ({
+        ...exercise,
+        plannedWeight: withWeightUnit(exercise.plannedWeight, unitPreference),
+        sets: exercise.sets.map((set) => ({
+          ...set,
+          weight: withWeightUnit(set.weight, unitPreference),
+        })),
+      })),
+    },
   }
 }
 

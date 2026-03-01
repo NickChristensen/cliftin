@@ -47,6 +47,7 @@ USAGE
 * [`cliftin programs list`](#cliftin-programs-list)
 * [`cliftin programs show [SELECTOR]`](#cliftin-programs-show-selector)
 * [`cliftin workouts list`](#cliftin-workouts-list)
+* [`cliftin workouts next`](#cliftin-workouts-next)
 * [`cliftin workouts show [WORKOUTID]`](#cliftin-workouts-show-workoutid)
 
 ## `cliftin exercises list`
@@ -191,6 +192,23 @@ DESCRIPTION
 ```
 
 _See code: [src/commands/workouts/list.ts](https://github.com/nickchristensen/cliftin/blob/v1.2.0/src/commands/workouts/list.ts)_
+
+## `cliftin workouts next`
+
+Show the up-next routine from the active program
+
+```
+USAGE
+  $ cliftin workouts next [--json]
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Show the up-next routine from the active program
+```
+
+_See code: [src/commands/workouts/next.ts](https://github.com/nickchristensen/cliftin/blob/v1.2.0/src/commands/workouts/next.ts)_
 
 ## `cliftin workouts show [WORKOUTID]`
 

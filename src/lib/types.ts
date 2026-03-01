@@ -79,6 +79,15 @@ export type WorkoutDetail = {
   routine: null | string
 }
 
+export type NextWorkoutDetail = {
+  program: ProgramSummary
+  routine: ProgramRoutine
+  week: {
+    id: number
+    number: number
+  }
+}
+
 export type ExerciseSummary = {
   equipment: null | string
   id: number

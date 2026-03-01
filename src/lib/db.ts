@@ -63,6 +63,7 @@ export interface DatabaseSchema {
     ZNAME: null | string
     ZPERIOD: null | number
     ZSOFTDELETED: null | number
+    ZUPNEXT: null | number
     ZWORKOUTPLAN: null | number
   }
   ZSETCONFIGURATION: {

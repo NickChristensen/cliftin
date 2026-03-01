@@ -4,8 +4,9 @@ import {DatabaseSchema} from '../db.js'
 import {formatExerciseDisplayName} from '../names.js'
 import {normalizeRpe} from '../rpe.js'
 import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
-import {WorkoutDetail, WorkoutExerciseDetail, WorkoutSummary} from '../types.js'
+import {NextWorkoutDetail, WorkoutDetail, WorkoutExerciseDetail, WorkoutSummary} from '../types.js'
 import {convertKgToDisplayVolume, convertKgToDisplayWeight, resolveGlobalWeightUnit} from '../units.js'
+import {getProgramDetail, resolveProgramSelector} from './programs.js'
 import {resolveIdOrName} from './selectors.js'
 
 export type WorkoutFilters = {
@@ -19,6 +20,53 @@ export type WorkoutFilters = {
 
 function asBool(value: null | number): boolean {
   return value === 1
+}
+
+export async function getNextWorkoutDetail(db: Kysely<DatabaseSchema>): Promise<NextWorkoutDetail> {
+  const programId = await resolveProgramSelector(db, undefined, true)
+  const programDetail = await getProgramDetail(db, programId)
+
+  const nextRoutines = await db
+    .selectFrom('ZROUTINE as r')
+    .leftJoin('ZPERIOD as p', 'p.Z_PK', 'r.ZPERIOD')
+    .select(['r.Z_PK as id', 'r.ZPERIOD as weekId'])
+    .where('r.ZUPNEXT', '=', 1)
+    .where('r.ZSOFTDELETED', 'is not', 1)
+    .where((eb) => eb.or([eb('p.ZWORKOUTPLAN', '=', programId), eb('r.ZWORKOUTPLAN', '=', programId)]))
+    .orderBy('p.Z_FOK_WORKOUTPLAN', 'asc')
+    .orderBy('r.Z_FOK_PERIOD', 'asc')
+    .orderBy('r.Z_PK', 'asc')
+    .execute()
+
+  if (nextRoutines.length === 0) {
+    throw new Error(`No up-next routine found for active program ${programDetail.program.name}.`)
+  }
+
+  if (nextRoutines.length > 1) {
+    throw new Error(`Expected exactly one up-next routine for active program ${programDetail.program.name}. Found ${nextRoutines.length}.`)
+  }
+
+  const nextRoutine = nextRoutines[0]
+  const weekIndex = programDetail.weeks.findIndex((week) => week.id === nextRoutine.weekId)
+  if (weekIndex === -1) {
+    throw new Error(`Up-next routine ${nextRoutine.id} is linked to unknown week ${nextRoutine.weekId}.`)
+  }
+
+  const week = programDetail.weeks[weekIndex]
+  const routine = week.routines.find((entry) => entry.id === nextRoutine.id)
+
+  if (!routine) {
+    throw new Error(`Up-next routine ${nextRoutine.id} was not found in active program detail.`)
+  }
+
+  return {
+    program: programDetail.program,
+    routine,
+    week: {
+      id: week.id,
+      number: weekIndex + 1,
+    },
+  }
 }
 
 export async function listWorkouts(db: Kysely<DatabaseSchema>, filters: WorkoutFilters): Promise<WorkoutSummary[]> {
