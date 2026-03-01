@@ -5,8 +5,8 @@ CLIftin: A read-only CLI for Liftin'
 
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/@nickchristensen/cliftin.svg)](https://npmjs.org/package/cliftin)
-[![Downloads/week](https://img.shields.io/npm/dw/@nickchristensen/cliftin.svg)](https://npmjs.org/package/cliftin)
+[![Version](https://img.shields.io/npm/v/@nickchristensen/cliftin.svg)](https://npmjs.org/package/@nickchristensen/cliftin)
+[![Downloads/week](https://img.shields.io/npm/dw/@nickchristensen/cliftin.svg)](https://npmjs.org/package/@nickchristensen/cliftin)
 
 
 <!-- toc -->
