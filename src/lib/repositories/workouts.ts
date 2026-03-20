@@ -170,6 +170,7 @@ export async function getWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: nu
             'ZWEIGHT as weight',
             'ZTIME as timeSeconds',
             'ZVOLUME as volume',
+            'ZWARMUPSET as warmupSet',
           ])
           .where('ZEXERCISE', 'in', exerciseResultIds)
           .orderBy('Z_FOK_EXERCISE', 'asc')
@@ -183,6 +184,7 @@ export async function getWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: nu
     const current = setsByExercise.get(row.exerciseResultId) ?? []
     current.push({
       id: row.id,
+      isWarmup: asBool(row.warmupSet),
       reps: row.reps,
       rpe: normalizeRpe(row.rpe),
       timeSeconds: row.timeSeconds,

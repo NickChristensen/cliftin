@@ -56,6 +56,7 @@ export type WorkoutSummary = {
 
 export type WorkoutSet = {
   id: number
+  isWarmup: boolean
   reps: null | number
   rpe: null | number
   timeSeconds: null | number
@@ -112,6 +113,7 @@ export type ExerciseHistoryRow = {
 }
 
 export type ExerciseHistorySet = {
+  isWarmup: boolean
   reps: null | number
   setId: number
   timeSeconds: null | number

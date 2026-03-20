@@ -81,6 +81,7 @@ export function serializeWorkoutDetailWithWeightUnits(detail: WorkoutDetail, uni
       exerciseResultId: exercise.exerciseResultId,
       name: exercise.name,
       sets: exercise.sets.map((set) => ({
+        isWarmup: set.isWarmup,
         reps: set.reps,
         rpe: set.rpe,
         setId: set.id,

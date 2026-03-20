@@ -38,6 +38,23 @@ describe('exercises show', () => {
     expect(payload.history[0].sets[0].weight).to.deep.equal({unit: 'lb', value: 231})
   })
 
+  it('excludes warmup sets from history summary aggregates', async () => {
+    const {stdout} = await runCommand('exercises show squat --json')
+    const payload = JSON.parse(stdout)
+    const priorWorkout = payload.history.find((row: {workoutId: number}) => row.workoutId === 4000)
+
+    expect(priorWorkout).to.include({
+      topReps: 5,
+      totalReps: 5,
+      workoutId: 4000,
+    })
+    expect(priorWorkout.topWeight).to.deep.equal({unit: 'lb', value: 225.5})
+    expect(priorWorkout.volume).to.equal(1127.5)
+    expect(priorWorkout.sets).to.have.length(2)
+    expect(priorWorkout.sets[0].isWarmup).to.equal(true)
+    expect(priorWorkout.sets[1].isWarmup).to.equal(false)
+  })
+
   it('supports min/max reps and weight filters in history mode', async () => {
     const {stdout} = await runCommand('exercises show squat --min-reps 6 --max-reps 6 --min-weight 231 --max-weight 231 --json')
     const payload = JSON.parse(stdout)

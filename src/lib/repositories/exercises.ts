@@ -48,6 +48,12 @@ function asBool(value: null | number): boolean {
   return value === 1
 }
 
+const workingSetCountExpr = sql<number>`sum(case when gs.Z_PK is not null and coalesce(gs.ZWARMUPSET, 0) != 1 then 1 else 0 end)`
+const workingSetTotalRepsExpr = sql<number>`coalesce(sum(case when coalesce(gs.ZWARMUPSET, 0) != 1 then gs.ZREPS else 0 end), 0)`
+const workingSetTopRepsExpr = sql<null | number>`max(case when coalesce(gs.ZWARMUPSET, 0) != 1 then gs.ZREPS end)`
+const workingSetTopWeightExpr = sql<null | number>`max(case when coalesce(gs.ZWARMUPSET, 0) != 1 then gs.ZWEIGHT end)`
+const workingSetVolumeExpr = sql<number>`coalesce(sum(case when coalesce(gs.ZWARMUPSET, 0) != 1 then gs.ZVOLUME else 0 end), 0)`
+
 type ExerciseSelectorRow = {
   id: number
   isUserCreated: null | number
@@ -211,11 +217,11 @@ export async function getExerciseHistoryRows(
       'wr.ZSTARTDATE as startDate',
       'wr.ZROUTINENAME as routineNameFromResult',
       'r.ZNAME as routineNameFromPlan',
-      (eb) => eb.fn.count('gs.Z_PK').as('sets'),
-      (eb) => eb.fn.coalesce(eb.fn.sum<number>('gs.ZREPS'), eb.val(0)).as('totalReps'),
-      (eb) => eb.fn.max('gs.ZREPS').as('topReps'),
-      (eb) => eb.fn.max('gs.ZWEIGHT').as('topWeight'),
-      (eb) => eb.fn.coalesce(eb.fn.sum<number>('gs.ZVOLUME'), eb.val(0)).as('volume'),
+      workingSetCountExpr.as('sets'),
+      workingSetTotalRepsExpr.as('totalReps'),
+      workingSetTopRepsExpr.as('topReps'),
+      workingSetTopWeightExpr.as('topWeight'),
+      workingSetVolumeExpr.as('volume'),
     ])
     .where('ei.Z_PK', '=', exerciseId)
     .groupBy(['wr.Z_PK', 'wr.ZSTARTDATE', 'wr.ZROUTINENAME', 'r.ZNAME'])
@@ -233,10 +239,10 @@ export async function getExerciseHistoryRows(
 
   if (dateRange.from !== undefined) query = query.where('wr.ZSTARTDATE', '>=', dateRange.from)
   if (dateRange.to !== undefined) query = query.where('wr.ZSTARTDATE', '<=', dateRange.to)
-  if (filters.minReps !== undefined) query = query.having((eb) => eb.fn.max('gs.ZREPS'), '>=', filters.minReps)
-  if (filters.maxReps !== undefined) query = query.having((eb) => eb.fn.max('gs.ZREPS'), '<=', filters.maxReps)
-  if (minWeightKg !== undefined) query = query.having((eb) => eb.fn.max('gs.ZWEIGHT'), '>=', minWeightKg)
-  if (maxWeightKg !== undefined) query = query.having((eb) => eb.fn.max('gs.ZWEIGHT'), '<=', maxWeightKg)
+  if (filters.minReps !== undefined) query = query.having(workingSetTopRepsExpr, '>=', filters.minReps)
+  if (filters.maxReps !== undefined) query = query.having(workingSetTopRepsExpr, '<=', filters.maxReps)
+  if (minWeightKg !== undefined) query = query.having(workingSetTopWeightExpr, '>=', minWeightKg)
+  if (maxWeightKg !== undefined) query = query.having(workingSetTopWeightExpr, '<=', maxWeightKg)
   if (filters.limit !== undefined) query = query.limit(filters.limit)
 
   const rows = await query.execute()
@@ -274,6 +280,7 @@ export async function getExerciseHistoryWithSetsRows(
       date: summary.date,
       routine: summary.routine,
       sets: (exercise?.sets ?? []).map((set) => ({
+        isWarmup: set.isWarmup,
         reps: set.reps,
         setId: set.id,
         timeSeconds: set.timeSeconds,

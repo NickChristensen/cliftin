@@ -50,6 +50,7 @@ export interface DatabaseSchema {
     ZRPE: null | number
     ZTIME: null | number
     ZVOLUME: null | number
+    ZWARMUPSET: null | number
     ZWEIGHT: null | number
   }
   ZPERIOD: {

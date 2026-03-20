@@ -126,6 +126,7 @@ export default class ExercisesShow extends Command {
         renderTable(
           lastPerformedSnapshot.exercise.sets.map((set) => ({
             id: set.id,
+            isWarmup: set.isWarmup,
             reps: set.reps,
             rpe: set.rpe,
             timeSeconds: set.timeSeconds,

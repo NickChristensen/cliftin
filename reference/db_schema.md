@@ -67,6 +67,11 @@ ZWORKOUTPLAN (Program)
 - Date/timestamp fields use Apple/Core Data epoch seconds (offset from Unix epoch), not Unix seconds directly.
   Convert before comparing/formatting.
 - `ZID` fields are often BLOB identifiers (not human-readable strings). For CLI UX, use numeric `Z_PK` as primary selector.
+- `ZGYMSETRESULT.ZWARMUPSET` (integer): flags whether a set was performed as a warm-up.
+  `0` = working set, `1` = warm-up set.
+  In a typical dataset this column is approximately 3000 warm-up sets out of ~8000 total sets (~37%).
+  Use `isWarmup: boolean` in the application layer.
+  History summary aggregates should exclude warm-up sets; keep the raw set rows and flag them instead.
 
 ## Notes
 
