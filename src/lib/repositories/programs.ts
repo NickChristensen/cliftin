@@ -12,6 +12,43 @@ function asBool(value: null | number): boolean {
   return value === 1
 }
 
+type PlannedExerciseSummary = {
+  plannedReps: null | number
+  plannedSets: null | number
+  plannedTimeSeconds: null | number
+  plannedWeight: null | number
+}
+
+function buildPlannedFallbackSets(
+  summary: PlannedExerciseSummary,
+  unitPreference: Awaited<ReturnType<typeof resolveProgramWeightUnit>>,
+): PlannedSet[] {
+  return Array.from({length: Math.max(summary.plannedSets ?? 1, 1)}, () => ({
+    id: null,
+    reps: summary.plannedReps,
+    rpe: null,
+    timeSeconds: summary.plannedTimeSeconds,
+    weight: convertKgToDisplayWeight(summary.plannedWeight, unitPreference),
+  }))
+}
+
+function explicitSetsMatchSummary(
+  explicitSets: PlannedSet[],
+  summary: PlannedExerciseSummary,
+  unitPreference: Awaited<ReturnType<typeof resolveProgramWeightUnit>>,
+): boolean {
+  const expectedCount = Math.max(summary.plannedSets ?? 1, 1)
+  const expectedWeight = convertKgToDisplayWeight(summary.plannedWeight, unitPreference)
+
+  if (explicitSets.length !== expectedCount) return false
+
+  return explicitSets.every((set) =>
+    set.reps === summary.plannedReps &&
+    set.timeSeconds === summary.plannedTimeSeconds &&
+    set.weight === expectedWeight
+  )
+}
+
 export async function listPrograms(db: Kysely<DatabaseSchema>): Promise<ProgramSummary[]> {
   const selectedProgram = await db
     .selectFrom('ZWORKOUTPROGRAMSINFO as info')
@@ -198,15 +235,17 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
 
     const current = exercisesByRoutine.get(row.routineId) ?? []
     const explicitSets = setsByExerciseConfig.get(row.exerciseConfigId) ?? []
-    const fallbackSet: PlannedSet[] = explicitSets.length > 0
-      ? explicitSets
-      : Array.from({length: Math.max(row.plannedSets ?? 1, 1)}, () => ({
-          id: null,
-          reps: row.plannedReps,
-          rpe: null,
-          timeSeconds: row.plannedTimeSeconds,
-          weight: convertKgToDisplayWeight(row.plannedWeight, unitPreference),
-        }))
+    const plannedSummary: PlannedExerciseSummary = {
+      plannedReps: row.plannedReps,
+      plannedSets: row.plannedSets,
+      plannedTimeSeconds: row.plannedTimeSeconds,
+      plannedWeight: row.plannedWeight,
+    }
+    const fallbackSet = buildPlannedFallbackSets(plannedSummary, unitPreference)
+    const selectedSets =
+      explicitSets.length > 0 && explicitSetsMatchSummary(explicitSets, plannedSummary, unitPreference)
+        ? explicitSets
+        : fallbackSet
 
     current.push({
       exerciseConfigId: row.exerciseConfigId,
@@ -216,7 +255,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       plannedSets: row.plannedSets,
       plannedTimeSeconds: row.plannedTimeSeconds,
       plannedWeight: convertKgToDisplayWeight(row.plannedWeight, unitPreference),
-      sets: fallbackSet,
+      sets: selectedSets,
     })
 
     exercisesByRoutine.set(row.routineId, current)

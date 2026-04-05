@@ -36,7 +36,7 @@ describe('programs show', () => {
     expect(squatExercise).to.exist
     expect(squatExercise.plannedWeight).to.deep.equal({unit: 'lb', value: 220})
     expect(squatExercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 220})
-    expect(squatExercise.sets[1].weight).to.deep.equal({unit: 'lb', value: 225.5})
+    expect(squatExercise.sets[1].weight).to.deep.equal({unit: 'lb', value: 220})
     expect(benchExercise.name).to.equal('Bench Press')
     expect(payload.program).to.have.property('programId', 1)
     expect(payload.program).to.not.have.property('id')

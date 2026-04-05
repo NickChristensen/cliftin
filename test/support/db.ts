@@ -47,6 +47,8 @@ insert into Z_12ROUTINES values (2001, 100, 100);
 insert into Z_12ROUTINES values (2002, 101, 100);
 insert into ZSETCONFIGURATION values (3000, 2000, 1, 5, 100, null, 16);
 insert into ZSETCONFIGURATION values (3001, 2000, 2, 5, 102.5, null, null);
+insert into ZSETCONFIGURATION values (3002, 2002, 1, 4, 80, 120, null);
+insert into ZSETCONFIGURATION values (3003, 2002, 2, 4, 80, 120, null);
 insert into ZWORKOUTRESULT values (4000, 100, 'Day A', 700000100, 3600);
 insert into ZWORKOUTRESULT values (4001, 100, 'Day A', 700000200, 3500);
 insert into ZEXERCISERESULT values (5000, 4000, 2000, 200);
