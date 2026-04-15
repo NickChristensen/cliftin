@@ -87,8 +87,8 @@ Show one exercise detail and history
 ```
 USAGE
   $ cliftin exercises show SELECTOR [--json] [--all | --limit <value>] [--from <value>] [--max-reps <value>]
-    [--max-weight <value>] [--min-reps <value>] [--min-weight <value>] [--program <value>] [--routine <value>] [--to
-    <value>]
+    [--max-weight <value>] [--min-reps <value>] [--min-weight <value>] [--no-warmup] [--program <value>] [--routine
+    <value>] [--to <value>]
 
 ARGUMENTS
   SELECTOR  exercise id or name
@@ -101,6 +101,7 @@ FLAGS
   --max-weight=<value>  History max top weight
   --min-reps=<value>    History min top reps
   --min-weight=<value>  History min top weight
+  --no-warmup           Hide warmup sets from output
   --program=<value>     History filter by program id or name
   --routine=<value>     History filter by routine id or name
   --to=<value>          History end date YYYY-MM-DD
@@ -317,10 +318,13 @@ Show one workout with exercises and sets
 
 ```
 USAGE
-  $ cliftin workouts show [WORKOUTID] [--json]
+  $ cliftin workouts show [WORKOUTID] [--json] [--no-warmup]
 
 ARGUMENTS
   [WORKOUTID]  workout id (default: latest workout)
+
+FLAGS
+  --no-warmup  Hide warmup sets from output
 
 GLOBAL FLAGS
   --json  Format output as json.

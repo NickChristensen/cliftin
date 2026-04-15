@@ -21,6 +21,7 @@ type ParsedFlags = {
   'max-weight'?: number
   'min-reps'?: number
   'min-weight'?: number
+  'no-warmup': boolean
   program?: string
   routine?: string
   to?: string
@@ -62,6 +63,7 @@ export default class ExercisesShow extends Command {
     'max-weight': Flags.integer({description: 'History max top weight'}),
     'min-reps': Flags.integer({description: 'History min top reps'}),
     'min-weight': Flags.integer({description: 'History min top weight'}),
+    'no-warmup': Flags.boolean({description: 'Hide warmup sets from output'}),
     program: Flags.string({description: 'History filter by program id or name'}),
     routine: Flags.string({description: 'History filter by routine id or name'}),
     to: Flags.string({description: 'History end date YYYY-MM-DD'}),
@@ -83,10 +85,12 @@ export default class ExercisesShow extends Command {
         const historyUnitPreference = await resolveExerciseWeightUnit(context.db, exerciseId)
         const history = (await getExerciseHistoryWithSetsRows(context.db, exerciseId, historyFilters)).map((row) => ({
           ...row,
-          sets: row.sets.map((set) => ({
-            ...set,
-            weight: withWeightUnit(set.weight, historyUnitPreference),
-          })),
+          sets: row.sets
+            .filter((set) => (parsedFlags['no-warmup'] ? !set.isWarmup : true))
+            .map((set) => ({
+              ...set,
+              weight: withWeightUnit(set.weight, historyUnitPreference),
+            })),
           topWeight: withWeightUnit(row.topWeight, historyUnitPreference),
         }))
 
@@ -124,7 +128,7 @@ export default class ExercisesShow extends Command {
       this.log('')
       this.log(
         renderTable(
-          lastPerformedSnapshot.exercise.sets.map((set) => ({
+          lastPerformedSnapshot.exercise.sets.filter((set) => (parsedFlags['no-warmup'] ? !set.isWarmup : true)).map((set) => ({
             id: set.id,
             isWarmup: set.isWarmup,
             reps: set.reps,

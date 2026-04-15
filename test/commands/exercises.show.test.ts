@@ -132,4 +132,21 @@ describe('exercises show', () => {
       error: {message: 'Invalid date range: --from must be before or equal to --to.'},
     })
   })
+
+  it('supports --no-warmup in plain output', async () => {
+    const {stdout} = await runCommand('exercises show squat --no-warmup')
+
+    expect(stdout).to.contain('6002')
+    expect(stdout).to.not.contain('6000')
+  })
+
+  it('supports --no-warmup in json output', async () => {
+    const {stdout} = await runCommand('exercises show squat --no-warmup --json')
+    const payload = JSON.parse(stdout)
+    const priorWorkout = payload.history.find((row: {workoutId: number}) => row.workoutId === 4000)
+
+    expect(priorWorkout.sets).to.have.length(1)
+    expect(priorWorkout.sets[0].setId).to.equal(6001)
+    expect(priorWorkout.sets[0].isWarmup).to.equal(false)
+  })
 })

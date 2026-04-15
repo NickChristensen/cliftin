@@ -1,10 +1,11 @@
-import {Args, Command} from '@oclif/core'
+import {Args, Command, Flags} from '@oclif/core'
 import {format, isValid, parseISO} from 'date-fns'
 
 import {closeDb, openDb} from '../../lib/db.js'
 import {serializeWorkoutDetailWithWeightUnits} from '../../lib/json-weight.js'
 import {renderTable} from '../../lib/output.js'
 import {getWorkoutDetail, listWorkouts} from '../../lib/repositories/workouts.js'
+import {WorkoutDetail} from '../../lib/types.js'
 import {resolveGlobalWeightUnit, weightUnitLabel} from '../../lib/units.js'
 
 function formatDurationMinutes(durationSeconds: null | number): string {
@@ -20,15 +21,30 @@ function formatWorkoutDate(dateIso: null | string): string {
   return format(parsed, 'yyyy-MM-dd HH:mm')
 }
 
+function maybeExcludeWarmupSets(detail: WorkoutDetail, omitWarmups: boolean): WorkoutDetail {
+  if (!omitWarmups) return detail
+
+  return {
+    ...detail,
+    exercises: detail.exercises.map((exercise) => ({
+      ...exercise,
+      sets: exercise.sets.filter((set) => !set.isWarmup),
+    })),
+  }
+}
+
 export default class WorkoutsShow extends Command {
   static args = {
     workoutId: Args.string({description: 'workout id (default: latest workout)', ignoreStdin: true, required: false}),
   }
   static description = 'Show one workout with exercises and sets'
   static enableJsonFlag = true
+  static flags = {
+    'no-warmup': Flags.boolean({description: 'Hide warmup sets from output'}),
+  }
 
   async run(): Promise<unknown | void> {
-    const {args} = await this.parse(WorkoutsShow)
+    const {args, flags} = await this.parse(WorkoutsShow)
     const context = openDb()
 
     try {
@@ -42,7 +58,7 @@ export default class WorkoutsShow extends Command {
             if (rows.length === 0) throw new Error('No workouts found.')
             return rows[0].id
           })
-      const detail = await getWorkoutDetail(context.db, workoutId)
+      const detail = maybeExcludeWarmupSets(await getWorkoutDetail(context.db, workoutId), flags['no-warmup'])
       const unitPreference = await resolveGlobalWeightUnit(context.db)
       const unitLabel = weightUnitLabel(unitPreference)
 

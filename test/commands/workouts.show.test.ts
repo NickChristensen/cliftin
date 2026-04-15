@@ -40,4 +40,24 @@ describe('workouts show', () => {
     expect(benchExercise.sets.map((set: {setId: number}) => set.setId)).to.deep.equal([6004, 6003])
     expect(squatExercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 220})
   })
+
+  it('supports --no-warmup in plain output', async () => {
+    const {stdout} = await runCommand('workouts show 4000 --no-warmup')
+
+    expect(stdout).to.not.contain('true')
+    expect(stdout).to.contain('6001')
+    expect(stdout).to.not.contain('6000')
+    expect(stdout).to.not.contain('6003')
+  })
+
+  it('supports --no-warmup in json output', async () => {
+    const {stdout} = await runCommand('workouts show 4000 --no-warmup --json')
+    const payload = JSON.parse(stdout)
+    const benchExercise = payload.exercises.find((exercise: {exerciseResultId: number}) => exercise.exerciseResultId === 5002)
+    const squatExercise = payload.exercises.find((exercise: {exerciseResultId: number}) => exercise.exerciseResultId === 5000)
+
+    expect(benchExercise.sets.map((set: {setId: number}) => set.setId)).to.deep.equal([6004])
+    expect(squatExercise.sets.map((set: {setId: number}) => set.setId)).to.deep.equal([6001])
+    expect(benchExercise.sets.every((set: {isWarmup: boolean}) => set.isWarmup === false)).to.equal(true)
+  })
 })
