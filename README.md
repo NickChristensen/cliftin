@@ -78,7 +78,7 @@ DESCRIPTION
   List exercises
 ```
 
-_See code: [src/commands/exercises/list.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/exercises/list.ts)_
+_See code: [src/commands/exercises/list.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/exercises/list.ts)_
 
 ## `cliftin exercises show SELECTOR`
 
@@ -112,7 +112,7 @@ DESCRIPTION
   Show one exercise detail and history
 ```
 
-_See code: [src/commands/exercises/show.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/exercises/show.ts)_
+_See code: [src/commands/exercises/show.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/exercises/show.ts)_
 
 ## `cliftin help [COMMAND]`
 
@@ -149,7 +149,7 @@ DESCRIPTION
   List programs
 ```
 
-_See code: [src/commands/programs/list.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/programs/list.ts)_
+_See code: [src/commands/programs/list.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/programs/list.ts)_
 
 ## `cliftin programs show [SELECTOR]`
 
@@ -169,7 +169,7 @@ DESCRIPTION
   Show one program hierarchy
 ```
 
-_See code: [src/commands/programs/show.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/programs/show.ts)_
+_See code: [src/commands/programs/show.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/programs/show.ts)_
 
 ## `cliftin routines from-workout [WORKOUTID]`
 
@@ -189,7 +189,7 @@ DESCRIPTION
   Show the planned routine for a completed workout
 ```
 
-_See code: [src/commands/routines/from-workout.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/from-workout.ts)_
+_See code: [src/commands/routines/from-workout.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/routines/from-workout.ts)_
 
 ## `cliftin routines latest`
 
@@ -206,7 +206,7 @@ DESCRIPTION
   Show the planned routine for the latest workout
 ```
 
-_See code: [src/commands/routines/latest.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/latest.ts)_
+_See code: [src/commands/routines/latest.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/routines/latest.ts)_
 
 ## `cliftin routines list`
 
@@ -228,7 +228,7 @@ DESCRIPTION
   List planned routines
 ```
 
-_See code: [src/commands/routines/list.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/list.ts)_
+_See code: [src/commands/routines/list.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/routines/list.ts)_
 
 ## `cliftin routines next`
 
@@ -245,7 +245,7 @@ DESCRIPTION
   Show the up-next routine from the active program
 ```
 
-_See code: [src/commands/routines/next.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/next.ts)_
+_See code: [src/commands/routines/next.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/routines/next.ts)_
 
 ## `cliftin routines show SELECTOR`
 
@@ -265,7 +265,7 @@ DESCRIPTION
   Show one planned routine
 ```
 
-_See code: [src/commands/routines/show.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/show.ts)_
+_See code: [src/commands/routines/show.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/routines/show.ts)_
 
 ## `cliftin workouts list`
 
@@ -292,7 +292,7 @@ DESCRIPTION
   List workouts
 ```
 
-_See code: [src/commands/workouts/list.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/workouts/list.ts)_
+_See code: [src/commands/workouts/list.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/workouts/list.ts)_
 
 ## `cliftin workouts next`
 
@@ -309,7 +309,7 @@ DESCRIPTION
   Redirect to routines next
 ```
 
-_See code: [src/commands/workouts/next.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/workouts/next.ts)_
+_See code: [src/commands/workouts/next.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/workouts/next.ts)_
 
 ## `cliftin workouts show [WORKOUTID]`
 
@@ -329,5 +329,5 @@ DESCRIPTION
   Show one workout with exercises and sets
 ```
 
-_See code: [src/commands/workouts/show.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/workouts/show.ts)_
+_See code: [src/commands/workouts/show.ts](https://github.com/nickchristensen/cliftin/blob/v4.0.0/src/commands/workouts/show.ts)_
 <!-- commandsstop -->
