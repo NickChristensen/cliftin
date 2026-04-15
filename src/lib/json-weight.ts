@@ -1,4 +1,4 @@
-import {ExerciseHistoryRow, NextWorkoutDetail, ProgramDetailTree, WorkoutDetail} from './types.js'
+import {ExerciseHistoryRow, ProgramDetailTree, RoutineDetail, WorkoutDetail} from './types.js'
 import {UnitPreference, withWeightUnit} from './units.js'
 
 function omitId<T extends {id: unknown}>(value: T): Omit<T, 'id'> {
@@ -43,13 +43,13 @@ export function serializeProgramDetailWithWeightUnits(
   }
 }
 
-export function serializeNextWorkoutDetailWithWeightUnits(
-  detail: NextWorkoutDetail,
+export function serializeRoutineDetailWithWeightUnits(
+  detail: RoutineDetail,
   unitPreference: UnitPreference,
 ): unknown {
   const program = omitId(detail.program)
 
-  return {
+  const payload: Record<string, unknown> = {
     program: {...program, programId: detail.program.id},
     routine: {
       ...omitId(detail.routine),
@@ -70,6 +70,21 @@ export function serializeNextWorkoutDetailWithWeightUnits(
       weekId: detail.week.id,
     },
   }
+
+  if (detail.workout) {
+    payload.workout = {
+      date: detail.workout.date,
+      duration: {
+        unit: 'seconds',
+        value: detail.workout.duration,
+      },
+      program: detail.workout.program,
+      routine: detail.workout.routine,
+      workoutId: detail.workout.id,
+    }
+  }
+
+  return payload
 }
 
 export function serializeWorkoutDetailWithWeightUnits(detail: WorkoutDetail, unitPreference: UnitPreference): unknown {

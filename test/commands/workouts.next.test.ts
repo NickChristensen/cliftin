@@ -1,42 +1,19 @@
 import {runCommand} from '@oclif/test'
 import {expect} from 'chai'
 
-import {createTestDb} from '../support/db.js'
-
 describe('workouts next', () => {
-  const dbPath = createTestDb()
-
-  beforeEach(() => {
-    process.env.LIFTIN_DB_PATH = dbPath
-  })
-
-  it('shows the up-next routine from the active program', async () => {
+  it('redirects to routines next', async () => {
     const {stdout} = await runCommand('workouts next')
 
-    expect(stdout).to.contain('[101] Day B')
-    expect(stdout).to.contain('Program: Active Program')
-    expect(stdout).to.contain('Week: 1')
-    expect(stdout).to.contain('[1001] Bench Press')
-    expect(stdout).to.contain('181.5 lb')
+    expect(stdout).to.contain('workouts next has moved')
+    expect(stdout).to.contain('cliftin routines next')
   })
 
-  it('returns planned routine detail in json mode', async () => {
+  it('returns redirect metadata in json mode', async () => {
     const {stdout} = await runCommand('workouts next --json')
     const payload = JSON.parse(stdout)
 
-    expect(payload.program.programId).to.equal(1)
-    expect(payload.program).to.not.have.property('id')
-    expect(payload.week).to.deep.equal({number: 1, weekId: 10})
-    expect(payload.routine.routineId).to.equal(101)
-    expect(payload.routine).to.not.have.property('id')
-    expect(payload.routine.exercises[0].exerciseId).to.equal(1001)
-    expect(payload.routine.exercises[0]).to.not.have.property('id')
-    expect(payload.routine.exercises[0].plannedWeight).to.deep.equal({unit: 'lb', value: 181.5})
-    expect(payload.routine.exercises[0].sets).to.have.length(2)
-    expect(payload.routine.exercises[0].sets[0]).to.have.property('setId', null)
-    expect(payload.routine.exercises[0].sets[0].reps).to.equal(8)
-    expect(payload.routine.exercises[0].sets[0].weight).to.deep.equal({unit: 'lb', value: 181.5})
-    expect(payload.routine.exercises[0].sets[1]).to.have.property('setId', null)
-    expect(payload.routine.exercises[0].sets[1].reps).to.equal(8)
+    expect(payload.command).to.equal('routines next')
+    expect(payload.message).to.contain('workouts next has moved')
   })
 })

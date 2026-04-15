@@ -46,6 +46,26 @@ export type ProgramDetailTree = {
   weeks: ProgramWeek[]
 }
 
+export type RoutineWeekRef = {
+  id: number
+  number: number
+}
+
+export type RoutineSummary = {
+  id: number
+  isNext: boolean
+  name: null | string
+  program: null | string
+  week: null | number
+}
+
+export type RoutineDetail = {
+  program: ProgramSummary
+  routine: ProgramRoutine
+  week: RoutineWeekRef
+  workout: null | WorkoutSummary
+}
+
 export type WorkoutSummary = {
   date: null | string
   duration: null | number
@@ -80,14 +100,7 @@ export type WorkoutDetail = {
   routine: null | string
 }
 
-export type NextWorkoutDetail = {
-  program: ProgramSummary
-  routine: ProgramRoutine
-  week: {
-    id: number
-    number: number
-  }
-}
+export type NextWorkoutDetail = RoutineDetail
 
 export type ExerciseSummary = {
   equipment: null | string

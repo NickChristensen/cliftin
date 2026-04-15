@@ -46,6 +46,11 @@ USAGE
 * [`cliftin help [COMMAND]`](#cliftin-help-command)
 * [`cliftin programs list`](#cliftin-programs-list)
 * [`cliftin programs show [SELECTOR]`](#cliftin-programs-show-selector)
+* [`cliftin routines from-workout [WORKOUTID]`](#cliftin-routines-from-workout-workoutid)
+* [`cliftin routines latest`](#cliftin-routines-latest)
+* [`cliftin routines list`](#cliftin-routines-list)
+* [`cliftin routines next`](#cliftin-routines-next)
+* [`cliftin routines show SELECTOR`](#cliftin-routines-show-selector)
 * [`cliftin workouts list`](#cliftin-workouts-list)
 * [`cliftin workouts next`](#cliftin-workouts-next)
 * [`cliftin workouts show [WORKOUTID]`](#cliftin-workouts-show-workoutid)
@@ -166,6 +171,102 @@ DESCRIPTION
 
 _See code: [src/commands/programs/show.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/programs/show.ts)_
 
+## `cliftin routines from-workout [WORKOUTID]`
+
+Show the planned routine for a completed workout
+
+```
+USAGE
+  $ cliftin routines from-workout [WORKOUTID] [--json]
+
+ARGUMENTS
+  [WORKOUTID]  workout id (default: latest workout)
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Show the planned routine for a completed workout
+```
+
+_See code: [src/commands/routines/from-workout.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/from-workout.ts)_
+
+## `cliftin routines latest`
+
+Show the planned routine for the latest workout
+
+```
+USAGE
+  $ cliftin routines latest [--json]
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Show the planned routine for the latest workout
+```
+
+_See code: [src/commands/routines/latest.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/latest.ts)_
+
+## `cliftin routines list`
+
+List planned routines
+
+```
+USAGE
+  $ cliftin routines list [--json] [--name <value>] [--program <value>] [--week <value>]
+
+FLAGS
+  --name=<value>     Filter by routine name contains
+  --program=<value>  Filter by program id or name
+  --week=<value>     Filter by week number
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  List planned routines
+```
+
+_See code: [src/commands/routines/list.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/list.ts)_
+
+## `cliftin routines next`
+
+Show the up-next routine from the active program
+
+```
+USAGE
+  $ cliftin routines next [--json]
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Show the up-next routine from the active program
+```
+
+_See code: [src/commands/routines/next.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/next.ts)_
+
+## `cliftin routines show SELECTOR`
+
+Show one planned routine
+
+```
+USAGE
+  $ cliftin routines show SELECTOR [--json]
+
+ARGUMENTS
+  SELECTOR  routine id or name
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Show one planned routine
+```
+
+_See code: [src/commands/routines/show.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/routines/show.ts)_
+
 ## `cliftin workouts list`
 
 List workouts
@@ -195,7 +296,7 @@ _See code: [src/commands/workouts/list.ts](https://github.com/nickchristensen/cl
 
 ## `cliftin workouts next`
 
-Show the up-next routine from the active program
+Redirect to routines next
 
 ```
 USAGE
@@ -205,7 +306,7 @@ GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Show the up-next routine from the active program
+  Redirect to routines next
 ```
 
 _See code: [src/commands/workouts/next.ts](https://github.com/nickchristensen/cliftin/blob/v3.0.0/src/commands/workouts/next.ts)_

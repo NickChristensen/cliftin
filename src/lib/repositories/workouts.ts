@@ -66,6 +66,7 @@ export async function getNextWorkoutDetail(db: Kysely<DatabaseSchema>): Promise<
       id: week.id,
       number: weekIndex + 1,
     },
+    workout: null,
   }
 }
 

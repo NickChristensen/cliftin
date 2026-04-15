@@ -71,6 +71,9 @@
       "programs": {
         "description": "Program hierarchy and planning"
       },
+      "routines": {
+        "description": "Planned routine detail and navigation"
+      },
       "workouts": {
         "description": "Workout history and detail"
       }
