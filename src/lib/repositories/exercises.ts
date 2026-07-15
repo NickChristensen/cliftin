@@ -229,14 +229,14 @@ function getApiExercisePerformanceQuery(
     .leftJoin('ZGYMSETRESULT as gs', 'gs.ZEXERCISE', 'er.Z_PK')
     .select([
       'er.Z_PK as id', 'wr.Z_PK as workoutId', 'wr.ZSTARTDATE as startDate',
-      'r.Z_PK as routineId', 'wr.ZROUTINENAME as routineNameFromResult', 'r.ZNAME as routineNameFromPlan',
+      'wr.ZROUTINE as routineId', 'wr.ZROUTINENAME as routineNameFromResult', 'r.ZNAME as routineNameFromPlan',
       'pDirect.Z_PK as programIdDirect', 'pFromPeriod.Z_PK as programIdFromPeriod',
       'pDirect.ZNAME as programNameDirect', 'pFromPeriod.ZNAME as programNameFromPeriod',
       workingSetCountExpr.as('setCount'), workingSetTotalRepsExpr.as('totalReps'),
       workingSetTopRepsExpr.as('topReps'), workingSetTopWeightExpr.as('topWeightKg'), workingSetVolumeExpr.as('volumeKg'),
     ])
     .where('er.ZEXERCISE', '=', exerciseId)
-    .groupBy(['er.Z_PK', 'wr.Z_PK', 'wr.ZSTARTDATE', 'r.Z_PK', 'wr.ZROUTINENAME', 'r.ZNAME', 'pDirect.Z_PK', 'pFromPeriod.Z_PK', 'pDirect.ZNAME', 'pFromPeriod.ZNAME'])
+    .groupBy(['er.Z_PK', 'wr.Z_PK', 'wr.ZSTARTDATE', 'wr.ZROUTINE', 'wr.ZROUTINENAME', 'r.ZNAME', 'pDirect.Z_PK', 'pFromPeriod.Z_PK', 'pDirect.ZNAME', 'pFromPeriod.ZNAME'])
 
   if (filters.programId !== undefined) query = query.where((eb) => eb.or([eb('r.ZWORKOUTPLAN', '=', filters.programId!), eb('per.ZWORKOUTPLAN', '=', filters.programId!)]))
   if (filters.routineId !== undefined) query = query.where('wr.ZROUTINE', '=', filters.routineId)

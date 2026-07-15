@@ -93,6 +93,31 @@ describe('v1 activity workout and exercise routes', () => {
     }
   })
 
+  it('preserves source foreign keys when historical workout targets are missing', async () => {
+    const historicalDbPath = createTestDb()
+    const fixtureDb = new Database(historicalDbPath)
+    fixtureDb.prepare('update ZWORKOUTRESULT set ZROUTINE = ? where Z_PK = ?').run(9999, 4001)
+    fixtureDb.prepare('insert into ZEXERCISERESULT values (?, ?, ?, ?, ?)').run(5008, 4001, 2000, 9998, 400)
+    fixtureDb.close()
+
+    const app = await createApp(historicalDbPath)
+    try {
+      const list = await app.inject({method: 'GET', url: '/v1/workouts'})
+      const detail = await app.inject({method: 'GET', url: '/v1/workouts/4001'})
+      const performances = await app.inject({method: 'GET', url: '/v1/exercises/1000/performances'})
+
+      expect(list.statusCode).to.equal(200)
+      expect(list.json().items.find((workout: {id: number}) => workout.id === 4001).routine).to.deep.equal({id: 9999, name: 'Day A'})
+      expect(detail.statusCode).to.equal(200)
+      expect(detail.json().routine).to.deep.equal({id: 9999, name: 'Day A'})
+      expect(detail.json().exercises.find((exercise: {id: number}) => exercise.id === 5008)).to.include({exerciseId: 9998, name: '(unnamed)'})
+      expect(performances.statusCode).to.equal(200)
+      expect(performances.json().items.find((performance: {id: number}) => performance.id === 5001).routine).to.deep.equal({id: 9999, name: 'Day A'})
+    } finally {
+      await app.close()
+    }
+  })
+
   it('accepts valid inclusive date filters and rejects invalid ranges', async () => {
     const app = await createApp()
     try {

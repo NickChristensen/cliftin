@@ -69,7 +69,7 @@ export async function listApiWorkouts(
       'wr.Z_PK as id',
       'wr.ZSTARTDATE as startDate',
       'wr.ZDURATION as durationSeconds',
-      'r.Z_PK as routineId',
+      'wr.ZROUTINE as routineId',
       'wr.ZROUTINENAME as routineNameFromResult',
       'r.ZNAME as routineNameFromPlan',
       'pDirect.Z_PK as programIdDirect',
@@ -112,7 +112,7 @@ export async function getApiWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId:
     .leftJoin('ZWORKOUTPLAN as pDirect', 'pDirect.Z_PK', 'r.ZWORKOUTPLAN')
     .leftJoin('ZWORKOUTPLAN as pFromPeriod', 'pFromPeriod.Z_PK', 'per.ZWORKOUTPLAN')
     .select([
-      'wr.Z_PK as id', 'wr.ZSTARTDATE as startDate', 'wr.ZDURATION as durationSeconds', 'r.Z_PK as routineId',
+      'wr.Z_PK as id', 'wr.ZSTARTDATE as startDate', 'wr.ZDURATION as durationSeconds', 'wr.ZROUTINE as routineId',
       'wr.ZROUTINENAME as routineNameFromResult', 'r.ZNAME as routineNameFromPlan',
       'pDirect.Z_PK as programIdDirect', 'pFromPeriod.Z_PK as programIdFromPeriod',
       'pDirect.ZNAME as programNameDirect', 'pFromPeriod.ZNAME as programNameFromPeriod',
@@ -123,7 +123,7 @@ export async function getApiWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId:
   const exerciseRows = await db
     .selectFrom('ZEXERCISERESULT as er')
     .leftJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'er.ZEXERCISE')
-    .select(['er.Z_PK as id', 'ei.Z_PK as exerciseId', 'ei.ZNAME as name', 'ei.ZISUSERCREATED as isUserCreated'])
+    .select(['er.Z_PK as id', 'er.ZEXERCISE as exerciseId', 'ei.ZNAME as name', 'ei.ZISUSERCREATED as isUserCreated'])
     .where('er.ZWORKOUT', '=', workoutId)
     .orderBy('er.Z_FOK_WORKOUT', 'asc')
     .orderBy('er.Z_PK', 'asc')

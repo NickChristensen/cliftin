@@ -12,8 +12,8 @@ import {createTestDb} from '../support/db.js'
 describe('v1 programs and routines routes', () => {
   const dbPath = createTestDb()
 
-  async function createApp() {
-    const db = openDb(dbPath)
+  async function createApp(path = dbPath) {
+    const db = openDb(path)
     const app = Fastify().withTypeProvider<TypeBoxTypeProvider>()
     app.setValidatorCompiler(TypeBoxValidatorCompiler)
     app.decorate('db', db)
@@ -79,6 +79,24 @@ describe('v1 programs and routines routes', () => {
       expect(deleted.statusCode).to.equal(200)
       expect(deleted.json()).to.include({id: 102, isDeleted: true})
       expect(deleted.json().exercises).to.deep.equal([])
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('preserves planned definition IDs when historical exercise metadata is missing', async () => {
+    const historicalDbPath = createTestDb()
+    const fixtureDb = new Database(historicalDbPath)
+    fixtureDb.prepare('insert into ZEXERCISECONFIGURATION values (?, ?, ?, ?, ?, ?, ?)').run(2005, 9999, 5, 3, 90, null, 0)
+    fixtureDb.prepare('insert into Z_12ROUTINES values (?, ?, ?)').run(2005, 100, 300)
+    fixtureDb.close()
+
+    const app = await createApp(historicalDbPath)
+    try {
+      const plan = await app.inject({method: 'GET', url: '/v1/programs/1/plan'})
+
+      expect(plan.statusCode).to.equal(200)
+      expect(plan.json().weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 2005)).to.include({exerciseId: 9999, name: '(unnamed)'})
     } finally {
       await app.close()
     }

@@ -172,7 +172,7 @@ export async function getApiProgramPlan(
       'ec.ZWEIGHT as plannedWeight',
       'ec.ZTIME as plannedTimeSeconds',
       'ec.ZUSEINDIVIDUALSETS as useIndividualSets',
-      'ei.Z_PK as exerciseId',
+      'ec.ZINFORMATION as exerciseId',
       'ei.ZISUSERCREATED as isUserCreated',
       'ei.ZNAME as exerciseName',
     ])
