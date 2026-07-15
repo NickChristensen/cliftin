@@ -114,8 +114,7 @@ export async function listExercises(
   let query = db
     .selectFrom('ZEXERCISEINFORMATION as ei')
     .leftJoin('ZEQUIPMENT2 as eq', 'eq.Z_PK', 'ei.ZEQUIPMENT')
-    .leftJoin('ZEXERCISECONFIGURATION as ec', 'ec.ZINFORMATION', 'ei.Z_PK')
-    .leftJoin('ZEXERCISERESULT as er', 'er.ZCONFIGURATION', 'ec.Z_PK')
+    .leftJoin('ZEXERCISERESULT as er', 'er.ZEXERCISE', 'ei.Z_PK')
     .leftJoin('ZWORKOUTRESULT as wr', 'wr.Z_PK', 'er.ZWORKOUT')
     .select([
       'ei.Z_PK as id',
@@ -205,8 +204,7 @@ export async function getExerciseHistoryRows(
   let query = db
     .selectFrom('ZWORKOUTRESULT as wr')
     .innerJoin('ZEXERCISERESULT as er', 'er.ZWORKOUT', 'wr.Z_PK')
-    .innerJoin('ZEXERCISECONFIGURATION as ec', 'ec.Z_PK', 'er.ZCONFIGURATION')
-    .innerJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'ec.ZINFORMATION')
+    .innerJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'er.ZEXERCISE')
     .leftJoin('ZROUTINE as r', 'r.Z_PK', 'wr.ZROUTINE')
     .leftJoin('ZPERIOD as per', 'per.Z_PK', 'r.ZPERIOD')
     .leftJoin('ZWORKOUTPLAN as pDirect', 'pDirect.Z_PK', 'r.ZWORKOUTPLAN')
@@ -335,9 +333,8 @@ export async function getExerciseDetail(
 
   const workoutCountRow = await db
     .selectFrom('ZEXERCISERESULT as er')
-    .innerJoin('ZEXERCISECONFIGURATION as ec', 'ec.Z_PK', 'er.ZCONFIGURATION')
     .select((eb) => eb.fn.count('er.ZWORKOUT').distinct().as('totalWorkouts'))
-    .where('ec.ZINFORMATION', '=', exerciseId)
+    .where('er.ZEXERCISE', '=', exerciseId)
     .executeTakeFirst()
 
   const latestHistory = await getExerciseHistoryRows(db, exerciseId, {limit: 1})

@@ -40,6 +40,7 @@ export interface DatabaseSchema {
     Z_FOK_WORKOUT: null | number
     Z_PK: number
     ZCONFIGURATION: null | number
+    ZEXERCISE: null | number
     ZWORKOUT: null | number
   }
   ZGYMSETRESULT: {

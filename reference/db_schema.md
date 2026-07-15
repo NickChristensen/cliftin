@@ -77,4 +77,5 @@ ZWORKOUTPLAN (Program)
 
 - Program and week are template/planning concepts; performed data starts at routine level.
 - Exercise definitions live in `ZEXERCISEINFORMATION`.
+- For performed exercises, resolve the definition through `ZEXERCISERESULT.ZEXERCISE`; this direct link is authoritative even when `ZCONFIGURATION.ZINFORMATION` differs or is null.
 - The routine-exercise join table is `Z_12ROUTINES`.

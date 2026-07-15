@@ -41,6 +41,18 @@ describe('workouts show', () => {
     expect(squatExercise.sets[0].weight).to.deep.equal({unit: 'lb', value: 220})
   })
 
+  it('uses the exercise result definition when its configuration differs or has no definition', async () => {
+    const {stdout} = await runCommand('workouts show 4001 --json')
+    const payload = JSON.parse(stdout)
+    const directDefinitionExercise = payload.exercises.find((exercise: {exerciseResultId: number}) => exercise.exerciseResultId === 5004)
+    const configurationWithoutDefinitionExercise = payload.exercises.find((exercise: {exerciseResultId: number}) => exercise.exerciseResultId === 5003)
+
+    expect(directDefinitionExercise.exerciseId).to.equal(1002)
+    expect(directDefinitionExercise.name).to.equal('bench')
+    expect(configurationWithoutDefinitionExercise.exerciseId).to.equal(1001)
+    expect(configurationWithoutDefinitionExercise.name).to.equal('Bench Press')
+  })
+
   it('supports --no-warmup in plain output', async () => {
     const {stdout} = await runCommand('workouts show 4000 --no-warmup')
 

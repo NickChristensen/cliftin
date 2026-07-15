@@ -38,6 +38,20 @@ describe('exercises show', () => {
     expect(payload.history[0].sets[0].weight).to.deep.equal({unit: 'lb', value: 231})
   })
 
+  it('attributes performed history and workout counts through the exercise result definition', async () => {
+    const {stdout: directExerciseStdout} = await runCommand('exercises show 1002 --json')
+    const {stdout: configurationExerciseStdout} = await runCommand('exercises show 1000 --all --json')
+    const directExercise = JSON.parse(directExerciseStdout)
+    const configurationExercise = JSON.parse(configurationExerciseStdout)
+
+    expect(directExercise.totalWorkouts).to.equal(1)
+    expect(directExercise.history.map((row: {workoutId: number}) => row.workoutId)).to.deep.equal([4001])
+    expect(directExercise.history[0].sets.map((set: {setId: number}) => set.setId)).to.deep.equal([6005])
+    expect(configurationExercise.totalWorkouts).to.equal(2)
+    expect(configurationExercise.history.map((row: {workoutId: number}) => row.workoutId)).to.deep.equal([4001, 4000])
+    expect(configurationExercise.history[0].totalReps).to.equal(6)
+  })
+
   it('excludes warmup sets from history summary aggregates', async () => {
     const {stdout} = await runCommand('exercises show squat --json')
     const payload = JSON.parse(stdout)

@@ -23,6 +23,8 @@ describe('exercises list', () => {
     expect(squat).to.have.property('secondaryMuscles', 'Glutes')
     expect(squat).to.have.property('equipment', 'Smith Machine')
     expect(squat).to.have.property('exerciseId', 1000)
+    expect(squat).to.have.property('timesPerformed', 2)
+    expect(payload.find((item: {exerciseId: number}) => item.exerciseId === 1002)).to.have.property('timesPerformed', 1)
     expect(squat).to.not.have.property('id')
     expect(payload.find((item: {exerciseId: number}) => item.exerciseId === 1003)).to.equal(undefined)
   })

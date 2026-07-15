@@ -17,7 +17,7 @@ create table Z_12ROUTINES (Z_12EXERCISES integer, Z_28ROUTINES integer, Z_FOK_12
 create table ZEXERCISECONFIGURATION (Z_PK integer primary key, ZINFORMATION integer, ZREPS integer, ZSETS integer, ZWEIGHT real, ZTIME integer);
 create table ZSETCONFIGURATION (Z_PK integer primary key, ZEXERCISECONFIGURATION integer, ZSETINDEX integer, ZREPS integer, ZWEIGHT real, ZTIME integer, ZRPE integer);
 create table ZWORKOUTRESULT (Z_PK integer primary key, ZROUTINE integer, ZROUTINENAME text, ZSTARTDATE real, ZDURATION real);
-create table ZEXERCISERESULT (Z_PK integer primary key, ZWORKOUT integer, ZCONFIGURATION integer, Z_FOK_WORKOUT integer);
+create table ZEXERCISERESULT (Z_PK integer primary key, ZWORKOUT integer, ZCONFIGURATION integer, ZEXERCISE integer, Z_FOK_WORKOUT integer);
 create table ZGYMSETRESULT (Z_PK integer primary key, ZEXERCISE integer, Z_FOK_EXERCISE integer, ZREPS integer, ZWEIGHT real, ZVOLUME real, ZRPE integer, ZTIME integer, ZWARMUPSET integer);
 create table ZEXERCISEINFORMATION (Z_PK integer primary key, ZNAME text, ZMUSCLES text, ZSECONDARYMUSCLES text, ZEQUIPMENT integer, ZTIMERBASED integer, ZSUPPORTSONEREPMAX integer, ZISUSERCREATED integer, ZSOFTDELETED integer, ZDEFAULTPROGRESSMETRIC text, ZPERCEPTIONSCALE text);
 create table ZEQUIPMENT2 (Z_PK integer primary key, ZNAME text, ZID text, ZMEASURMENTUNIT text);
@@ -42,6 +42,7 @@ insert into ZEXERCISEINFORMATION values (1003, 'deleted_exercise', 'legs', 'glut
 insert into ZEXERCISECONFIGURATION values (2000, 1000, 5, 3, 100, null);
 insert into ZEXERCISECONFIGURATION values (2001, 1001, 5, 3, 80, null);
 insert into ZEXERCISECONFIGURATION values (2002, 1001, 8, 2, 82.5, 120);
+insert into ZEXERCISECONFIGURATION values (2003, null, 5, 3, 90, null);
 insert into Z_12ROUTINES values (2000, 100, 200);
 insert into Z_12ROUTINES values (2001, 100, 100);
 insert into Z_12ROUTINES values (2002, 101, 100);
@@ -51,14 +52,17 @@ insert into ZSETCONFIGURATION values (3002, 2002, 1, 4, 80, 120, null);
 insert into ZSETCONFIGURATION values (3003, 2002, 2, 4, 80, 120, null);
 insert into ZWORKOUTRESULT values (4000, 100, 'Day A', 700000100, 3600);
 insert into ZWORKOUTRESULT values (4001, 100, 'Day A', 700000200, 3500);
-insert into ZEXERCISERESULT values (5000, 4000, 2000, 200);
-insert into ZEXERCISERESULT values (5002, 4000, 2001, 100);
-insert into ZEXERCISERESULT values (5001, 4001, 2000, 100);
+insert into ZEXERCISERESULT values (5000, 4000, 2000, 1000, 200);
+insert into ZEXERCISERESULT values (5002, 4000, 2001, 1001, 100);
+insert into ZEXERCISERESULT values (5001, 4001, 2000, 1000, 100);
+insert into ZEXERCISERESULT values (5003, 4001, 2003, 1001, 200);
+insert into ZEXERCISERESULT values (5004, 4001, 2000, 1002, 300);
 insert into ZGYMSETRESULT values (6000, 5000, 100, 5, 100, 500, null, null, 1);
 insert into ZGYMSETRESULT values (6001, 5000, 200, 5, 102.5, 512.5, null, null, 0);
 insert into ZGYMSETRESULT values (6003, 5002, 200, 5, 80, 400, null, null, 1);
 insert into ZGYMSETRESULT values (6004, 5002, 100, 5, 82.5, 412.5, null, null, 0);
 insert into ZGYMSETRESULT values (6002, 5001, 100, 6, 105, 630, null, null, 0);
+insert into ZGYMSETRESULT values (6005, 5004, 100, 10, 90, 900, null, null, 0);
   `)
 
   db.close()
