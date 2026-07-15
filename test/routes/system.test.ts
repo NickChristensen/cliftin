@@ -1,4 +1,5 @@
 import {expect} from 'chai'
+import Database from 'better-sqlite3'
 
 import {buildApp} from '../../src/app.js'
 import {closeDb, openDb} from '../../src/lib/db.js'
@@ -8,13 +9,45 @@ import {createTestDb} from '../support/db.js'
 describe('system routes', () => {
   const dbPath = createTestDb()
 
-  async function createApp() {
-    const db = openDb(dbPath)
+  async function createApp(path = dbPath) {
+    const db = openDb(path)
     return buildApp({closeDb: () => closeDb(db), db})
   }
 
   it('returns healthy when a read-only database query succeeds', async () => {
     const app = await createApp()
+    try {
+      const response = await app.inject({method: 'GET', url: '/health'})
+
+      expect(response.statusCode).to.equal(200)
+      expect(response.json()).to.deep.equal({status: 'ok'})
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns healthy for an empty database with the Liftin schema', async () => {
+    const emptyDbPath = createTestDb()
+    const writer = new Database(emptyDbPath)
+    for (const table of [
+      'Z_12ROUTINES',
+      'ZEQUIPMENT2',
+      'ZEXERCISECONFIGURATION',
+      'ZEXERCISEINFORMATION',
+      'ZEXERCISERESULT',
+      'ZGYMSETRESULT',
+      'ZPERIOD',
+      'ZROUTINE',
+      'ZSETCONFIGURATION',
+      'ZWORKOUTPLAN',
+      'ZWORKOUTPROGRAMSINFO',
+      'ZWORKOUTRESULT',
+    ]) {
+      writer.prepare(`delete from "${table}"`).run()
+    }
+    writer.close()
+
+    const app = await createApp(emptyDbPath)
     try {
       const response = await app.inject({method: 'GET', url: '/health'})
 

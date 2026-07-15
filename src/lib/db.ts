@@ -12,7 +12,6 @@ export interface DatabaseSchema {
   ZEQUIPMENT2: {
     Z_PK: number
     ZID: null | string
-    ZMEASURMENTUNIT: null | string
     ZNAME: null | string
   }
   ZEXERCISECONFIGURATION: {
@@ -41,7 +40,6 @@ export interface DatabaseSchema {
   ZEXERCISERESULT: {
     Z_FOK_WORKOUT: null | number
     Z_PK: number
-    ZCONFIGURATION: null | number
     ZEXERCISE: null | number
     ZWORKOUT: null | number
   }
@@ -79,9 +77,6 @@ export interface DatabaseSchema {
     ZTIME: null | number
     ZWEIGHT: null | number
   }
-  ZSETTINGS: {
-    ZMEASURMENTUNIT: null | string
-  }
   ZWORKOUTPLAN: {
     Z_PK: number
     ZDATEADDED: null | number
@@ -92,8 +87,6 @@ export interface DatabaseSchema {
     ZSOFTDELETED: null | number
   }
   ZWORKOUTPROGRAMSINFO: {
-    Z_PK: number
-    ZSECONDARYWORKOUTPROGRAMID: Buffer | null
     ZSELECTEDWORKOUTPROGRAMID: Buffer | null
   }
   ZWORKOUTRESULT: {
@@ -111,6 +104,63 @@ export type DbContext = {
 }
 
 /**
+ * Columns used by the API. Checking these at open time prevents a readable
+ * SQLite file (for example, an empty database created by mistake) from being
+ * treated as a valid Liftin export and failing later on the first route call.
+ */
+const REQUIRED_LIFTIN_SCHEMA: Readonly<Record<keyof DatabaseSchema, readonly string[]>> = {
+  Z_12ROUTINES: ['Z_12EXERCISES', 'Z_28ROUTINES', 'Z_FOK_12EXERCISES'],
+  ZEQUIPMENT2: ['Z_PK', 'ZID', 'ZNAME'],
+  ZEXERCISECONFIGURATION: ['Z_PK', 'ZINFORMATION', 'ZREPS', 'ZSETS', 'ZTIME', 'ZUSEINDIVIDUALSETS', 'ZWEIGHT'],
+  ZEXERCISEINFORMATION: [
+    'Z_PK',
+    'ZALTERNATIVEENGLISHNAMES',
+    'ZDEFAULTPROGRESSMETRIC',
+    'ZEQUIPMENT',
+    'ZISUSERCREATED',
+    'ZMUSCLES',
+    'ZNAME',
+    'ZPERCEPTIONSCALE',
+    'ZSECONDARYMUSCLES',
+    'ZSOFTDELETED',
+    'ZSUPPORTSONEREPMAX',
+    'ZTIMERBASED',
+  ],
+  ZEXERCISERESULT: ['Z_FOK_WORKOUT', 'Z_PK', 'ZEXERCISE', 'ZWORKOUT'],
+  ZGYMSETRESULT: ['Z_FOK_EXERCISE', 'Z_PK', 'ZEXERCISE', 'ZREPS', 'ZRPE', 'ZTIME', 'ZVOLUME', 'ZWARMUPSET', 'ZWEIGHT'],
+  ZPERIOD: ['Z_FOK_WORKOUTPLAN', 'Z_PK', 'ZWORKOUTPLAN'],
+  ZROUTINE: ['Z_FOK_PERIOD', 'Z_PK', 'ZNAME', 'ZPERIOD', 'ZSOFTDELETED', 'ZUPNEXT', 'ZWORKOUTPLAN'],
+  ZSETCONFIGURATION: ['Z_PK', 'ZEXERCISECONFIGURATION', 'ZREPS', 'ZRPE', 'ZSETINDEX', 'ZTIME', 'ZWEIGHT'],
+  ZWORKOUTPLAN: ['Z_PK', 'ZDATEADDED', 'ZID', 'ZISCURRENT', 'ZISTEMPLATE', 'ZNAME', 'ZSOFTDELETED'],
+  ZWORKOUTPROGRAMSINFO: ['ZSELECTEDWORKOUTPROGRAMID'],
+  ZWORKOUTRESULT: ['Z_PK', 'ZDURATION', 'ZROUTINE', 'ZROUTINENAME', 'ZSTARTDATE'],
+}
+
+type TableInfoRow = {name: string}
+
+function assertLiftinSchema(sqlite: Database.Database, path: string): void {
+  const missing: string[] = []
+
+  for (const [table, columns] of Object.entries(REQUIRED_LIFTIN_SCHEMA)) {
+    const tableInfo = sqlite.prepare(`PRAGMA table_info("${table}")`).all() as TableInfoRow[]
+    const present = new Set(tableInfo.map((column) => column.name))
+
+    if (tableInfo.length === 0) {
+      missing.push(`table ${table}`)
+      continue
+    }
+
+    for (const column of columns) {
+      if (!present.has(column)) missing.push(`column ${table}.${column}`)
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(`Database at ${path} is not a compatible Liftin database; missing ${missing.join(', ')}`)
+  }
+}
+
+/**
  * Runs related reads against one SQLite snapshot. SQLite's plain `BEGIN`
  * transaction is deferred, so it does not acquire a lock until the first
  * query while ensuring every subsequent query observes that same snapshot.
@@ -124,7 +174,13 @@ export async function withDeferredReadTransaction<T>(
 
 export function openDb(path = getDbPath()): DbContext {
   const sqlite = new Database(path, {fileMustExist: true, readonly: true})
-  sqlite.pragma('query_only = ON')
+  try {
+    sqlite.pragma('query_only = ON')
+    assertLiftinSchema(sqlite, path)
+  } catch (error) {
+    sqlite.close()
+    throw error
+  }
   const db = new Kysely<DatabaseSchema>({
     dialect: new SqliteDialect({database: sqlite}),
   })

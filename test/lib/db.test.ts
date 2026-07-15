@@ -1,5 +1,8 @@
 import {expect} from 'chai'
 import Database from 'better-sqlite3'
+import {mkdtempSync} from 'node:fs'
+import {tmpdir} from 'node:os'
+import {join} from 'node:path'
 
 import {closeDb, openDb, withDeferredReadTransaction} from '../../src/lib/db.js'
 import {createTestDb} from '../support/db.js'
@@ -41,5 +44,18 @@ describe('withDeferredReadTransaction', () => {
       await closeDb(reader)
       writer.close()
     }
+  })
+})
+
+describe('openDb', () => {
+  it('rejects a readable SQLite file that is not a Liftin database', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cliftin-test-'))
+    const dbPath = join(dir, 'empty.sqlite')
+    const sqlite = new Database(dbPath)
+    sqlite.close()
+
+    expect(() => openDb(dbPath)).to.throw(
+      `Database at ${dbPath} is not a compatible Liftin database; missing table Z_12ROUTINES`,
+    )
   })
 })

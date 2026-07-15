@@ -6,7 +6,7 @@ import {HealthRouteSchema, OpenApiRouteSchema} from '../schemas/system.js'
 export const systemRoutes: FastifyPluginAsyncTypebox = async (app) => {
   app.get('/health', {schema: {...HealthRouteSchema, querystring: EmptyObjectSchema}}, async (_request, reply) => {
     try {
-      app.db.sqlite.prepare('select 1').get()
+      app.db.sqlite.prepare('select Z_PK from ZWORKOUTPLAN limit 1').get()
       return {status: 'ok' as const}
     } catch (error) {
       app.log.warn({err: error}, 'Database health check failed')
