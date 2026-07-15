@@ -3,9 +3,8 @@ import {mkdtempSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 
-export function createTestDb(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'cliftin-test-'))
-  const dbPath = join(dir, 'test.sqlite')
+export function createTestDb(path?: string): string {
+  const dbPath = path ?? join(mkdtempSync(join(tmpdir(), 'cliftin-test-')), 'test.sqlite')
   const db = new Database(dbPath)
 
   db.exec(`

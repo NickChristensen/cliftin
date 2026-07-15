@@ -53,8 +53,8 @@
     "test": "mocha --forbid-only \"test/**/*.test.ts\""
   },
   "simple-git-hooks": {
-    "pre-commit": "npm run build && git add openapi.json",
-    "pre-push": "npm run build && npm test"
+    "pre-commit": "npm run openapi:validate && git diff --exit-code -- openapi.json",
+    "pre-push": "npm test && npm run openapi:validate && git diff --exit-code -- openapi.json"
   },
   "types": "dist/index.d.ts"
 }

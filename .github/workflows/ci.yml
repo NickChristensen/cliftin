@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run openapi:validate
+      - name: Ensure the generated OpenAPI document is committed
+        run: git diff --exit-code -- openapi.json
+
+  container-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build the API image
+        run: docker build --tag cliftin-ci .
+      - name: Create a compatible read-only fixture database
+        run: |
+          mkdir .ci-fixture
+          node --loader ts-node/esm --input-type=module -e 'import {createTestDb} from "./test/support/db.ts"; createTestDb(".ci-fixture/BelloDataModel.sqlite")'
+      - name: Start the API against the fixture database
+        run: |
+          docker run --detach --name cliftin-ci --read-only --tmpfs /tmp --publish 127.0.0.1::3000 --env TZ=Etc/UTC --env LIFTIN_DB_PATH=/liftin/BelloDataModel.sqlite --volume "$PWD/.ci-fixture:/liftin:ro" cliftin-ci
+      - name: Check the container health endpoint
+        run: |
+          port="$(docker port cliftin-ci 3000/tcp | sed 's/.*://')"
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error "http://127.0.0.1:${port}/health" | grep --fixed-strings --quiet '{"status":"ok"}'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs cliftin-ci
+          exit 1
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs cliftin-ci
+      - name: Remove the smoke-test container
+        if: always()
+        run: docker rm --force cliftin-ci || true
