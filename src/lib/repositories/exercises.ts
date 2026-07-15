@@ -65,6 +65,44 @@ export type ApiExercisePerformanceRow = {
   workoutId: number
 }
 
+export type ApiExercisePerformancePageOptions = {
+  cursor?: {
+    id: number
+    startedAt: null | string
+  }
+  descending: boolean
+  limit: number
+}
+
+export type ApiExerciseStatisticsRow = {
+  lastPerformedAt: null | number
+  performanceCount: number
+  setCount: number
+  topReps: null | number
+  topWeightKg: null | number
+  totalReps: number
+  volumeKg: number
+  workoutCount: number
+}
+
+type ApiExercisePerformanceSourceRow = {
+  id: number
+  programIdDirect: null | number
+  programIdFromPeriod: null | number
+  programNameDirect: null | string
+  programNameFromPeriod: null | string
+  routineId: null | number
+  routineNameFromPlan: null | string
+  routineNameFromResult: null | string
+  setCount: number
+  startDate: null | number
+  topReps: null | number
+  topWeightKg: null | number
+  totalReps: number
+  volumeKg: number
+  workoutId: number
+}
+
 function asBool(value: null | number): boolean {
   return value === 1
 }
@@ -175,11 +213,11 @@ export async function getApiExerciseMetadata(
   }
 }
 
-export async function getApiExercisePerformanceRows(
+function getApiExercisePerformanceQuery(
   db: Kysely<DatabaseSchema>,
   exerciseId: number,
   filters: ApiExercisePerformanceFilters,
-): Promise<ApiExercisePerformanceRow[]> {
+) {
   const dateRange = dateRangeToAppleSeconds({from: filters.from, to: filters.to})
   let query = db
     .selectFrom('ZEXERCISERESULT as er')
@@ -209,7 +247,44 @@ export async function getApiExercisePerformanceRows(
   if (filters.minWeightKg !== undefined) query = query.having(workingSetTopWeightExpr, '>=', filters.minWeightKg)
   if (filters.maxWeightKg !== undefined) query = query.having(workingSetTopWeightExpr, '<=', filters.maxWeightKg)
 
-  const rows = await query.orderBy('wr.ZSTARTDATE', 'desc').orderBy('er.Z_PK', 'desc').execute()
+  return query
+}
+
+function cursorStartDate(startedAt: string): number {
+  return Date.parse(startedAt) / 1000 - 978_307_200
+}
+
+function applyPerformanceCursor(
+  query: ReturnType<typeof getApiExercisePerformanceQuery>,
+  cursor: NonNullable<ApiExercisePerformancePageOptions['cursor']>,
+  descending: boolean,
+) {
+  if (cursor.startedAt === null) {
+    return query.where((eb) => descending
+      ? eb.or([
+        eb('wr.ZSTARTDATE', 'is not', null),
+        eb.and([eb('wr.ZSTARTDATE', 'is', null), eb('er.Z_PK', '<', cursor.id)]),
+      ])
+      : eb.and([eb('wr.ZSTARTDATE', 'is', null), eb('er.Z_PK', '>', cursor.id)]))
+  }
+
+  const startedAt = cursorStartDate(cursor.startedAt)
+  return query.where((eb) => descending
+    ? eb.or([
+      eb('wr.ZSTARTDATE', '<', startedAt),
+      eb.and([eb('wr.ZSTARTDATE', '=', startedAt), eb('er.Z_PK', '<', cursor.id)]),
+    ])
+    : eb.or([
+      eb('wr.ZSTARTDATE', 'is', null),
+      eb('wr.ZSTARTDATE', '>', startedAt),
+      eb.and([eb('wr.ZSTARTDATE', '=', startedAt), eb('er.Z_PK', '>', cursor.id)]),
+    ]))
+}
+
+async function hydrateApiExercisePerformanceRows(
+  db: Kysely<DatabaseSchema>,
+  rows: ApiExercisePerformanceSourceRow[],
+): Promise<ApiExercisePerformanceRow[]> {
   const ids = rows.map((row) => row.id)
   const setRows = ids.length === 0 ? [] : await db.selectFrom('ZGYMSETRESULT').select([
     'Z_PK as id', 'ZEXERCISE as performedExerciseId', 'ZREPS as reps', 'ZRPE as rpe', 'ZTIME as timeSeconds',
@@ -234,4 +309,55 @@ export async function getApiExercisePerformanceRows(
     statistics: {setCount: Number(row.setCount), topReps: row.topReps, topWeightKg: row.topWeightKg, totalReps: Number(row.totalReps), volumeKg: Number(row.volumeKg)},
     workoutId: row.workoutId,
   }))
+}
+
+export async function getApiExercisePerformancePage(
+  db: Kysely<DatabaseSchema>,
+  exerciseId: number,
+  filters: ApiExercisePerformanceFilters,
+  options: ApiExercisePerformancePageOptions,
+): Promise<{hasMore: boolean; rows: ApiExercisePerformanceRow[]}> {
+  let query = getApiExercisePerformanceQuery(db, exerciseId, filters)
+  if (options.cursor) query = applyPerformanceCursor(query, options.cursor, options.descending)
+  const rows = await query
+    .orderBy('wr.ZSTARTDATE', options.descending ? 'desc' : 'asc')
+    .orderBy('er.Z_PK', options.descending ? 'desc' : 'asc')
+    .limit(options.limit + 1)
+    .execute()
+  const page = rows.slice(0, options.limit)
+  return {
+    hasMore: rows.length > options.limit,
+    rows: await hydrateApiExercisePerformanceRows(db, page),
+  }
+}
+
+export async function getApiExerciseStatistics(
+  db: Kysely<DatabaseSchema>,
+  exerciseId: number,
+  filters: ApiExercisePerformanceFilters,
+): Promise<ApiExerciseStatisticsRow> {
+  const performances = getApiExercisePerformanceQuery(db, exerciseId, filters).as('performance')
+  const row = await db
+    .selectFrom(performances)
+    .select([
+      sql<null | number>`max("performance"."startDate")`.as('lastPerformedAt'),
+      sql<number>`count(*)`.as('performanceCount'),
+      sql<number>`coalesce(sum("performance"."setCount"), 0)`.as('setCount'),
+      sql<null | number>`max("performance"."topReps")`.as('topReps'),
+      sql<null | number>`max("performance"."topWeightKg")`.as('topWeightKg'),
+      sql<number>`coalesce(sum("performance"."totalReps"), 0)`.as('totalReps'),
+      sql<number>`coalesce(sum("performance"."volumeKg"), 0)`.as('volumeKg'),
+      sql<number>`count(distinct "performance"."workoutId")`.as('workoutCount'),
+    ])
+    .executeTakeFirstOrThrow()
+  return {
+    lastPerformedAt: row.lastPerformedAt,
+    performanceCount: Number(row.performanceCount),
+    setCount: Number(row.setCount),
+    topReps: row.topReps,
+    topWeightKg: row.topWeightKg,
+    totalReps: Number(row.totalReps),
+    volumeKg: Number(row.volumeKg),
+    workoutCount: Number(row.workoutCount),
+  }
 }

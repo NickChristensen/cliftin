@@ -4,7 +4,7 @@ import {HttpError, notFound} from '../http/errors.js'
 import {paginateRows} from '../http/pagination.js'
 import {withDeferredReadTransaction} from '../lib/db.js'
 import {formatExerciseDisplayName} from '../lib/names.js'
-import {type ApiExercisePerformanceRow, getApiExerciseMetadata, getApiExercisePerformanceRows, listApiExerciseMetadata} from '../lib/repositories/exercises.js'
+import {type ApiExercisePerformanceRow, getApiExerciseMetadata, getApiExercisePerformancePage, getApiExerciseStatistics, listApiExerciseMetadata} from '../lib/repositories/exercises.js'
 import {appleSecondsToUtcIso, dateRangeToAppleSeconds} from '../lib/time.js'
 import {convertApiWeightToKg, convertKgToApiWeight} from '../lib/units.js'
 import {EmptyObjectSchema} from '../schemas/common.js'
@@ -79,30 +79,8 @@ function toPerformance(row: ApiExercisePerformanceRow, exerciseId: number, unit:
   }
 }
 
-function isAfterCursor(row: ApiExercisePerformanceRow, cursor: PerformanceCursor, descending: boolean): boolean {
-  const startedAt = appleSecondsToUtcIso(row.startDate)
-  if (startedAt === cursor.startedAt) return descending ? row.id < cursor.id : row.id > cursor.id
-  if (startedAt === null) return !descending
-  if (cursor.startedAt === null) return descending
-  return descending ? startedAt < cursor.startedAt : startedAt > cursor.startedAt
-}
-
-function filteredRows(rows: ApiExercisePerformanceRow[], query: {cursor?: string; limit?: number; sort?: '-startedAt' | 'startedAt'}) {
-  const sort = query.sort ?? '-startedAt'
-  const descending = sort.startsWith('-')
-  const cursor = decodeCursor(query.cursor, sort)
-  rows.sort((a, b) => {
-    const byTime = (appleSecondsToUtcIso(a.startDate) ?? '').localeCompare(appleSecondsToUtcIso(b.startDate) ?? '')
-    return descending ? -byTime || b.id - a.id : byTime || a.id - b.id
-  })
-  const eligible = cursor ? rows.filter((row) => isAfterCursor(row, cursor, descending)) : rows
-  const limit = query.limit ?? 50
-  const page = eligible.slice(0, limit)
-  const last = page.at(-1)
-  return {
-    nextCursor: eligible.length > limit && last ? Buffer.from(JSON.stringify({id: last.id, sort, startedAt: appleSecondsToUtcIso(last.startDate)})).toString('base64url') : undefined,
-    page,
-  }
+function encodeCursor(row: ApiExercisePerformanceRow, sort: PerformanceSort): string {
+  return Buffer.from(JSON.stringify({id: row.id, sort, startedAt: appleSecondsToUtcIso(row.startDate)})).toString('base64url')
 }
 
 export const exerciseRoutes: FastifyPluginAsyncTypebox = async (app) => {
@@ -130,37 +108,21 @@ export const exerciseRoutes: FastifyPluginAsyncTypebox = async (app) => {
     return withDeferredReadTransaction(app.db.db, async (db) => {
       const exercise = await getApiExerciseMetadata(db, request.params.exerciseId)
       if (!exercise) throw notFound('exercise-not-found', 'Exercise not found')
-      const rows = await getApiExercisePerformanceRows(db, request.params.exerciseId, {
+      const statistics = await getApiExerciseStatistics(db, request.params.exerciseId, {
         ...request.query,
         maxWeightKg: request.query.maxWeight === undefined ? undefined : convertApiWeightToKg(request.query.maxWeight, unit),
         minWeightKg: request.query.minWeight === undefined ? undefined : convertApiWeightToKg(request.query.minWeight, unit),
       })
-      let lastPerformedAt: null | string = null
-      let setCount = 0
-      let topReps: null | number = null
-      let topWeightKg: null | number = null
-      let totalReps = 0
-      let volumeKg = 0
-      const workoutIds = new Set<number>()
-      for (const row of rows) {
-        if (lastPerformedAt === null) lastPerformedAt = appleSecondsToUtcIso(row.startDate)
-        setCount += row.statistics.setCount
-        totalReps += row.statistics.totalReps
-        volumeKg += row.statistics.volumeKg
-        workoutIds.add(row.workoutId)
-        if (row.statistics.topReps !== null && (topReps === null || row.statistics.topReps > topReps)) topReps = row.statistics.topReps
-        if (row.statistics.topWeightKg !== null && (topWeightKg === null || row.statistics.topWeightKg > topWeightKg)) topWeightKg = row.statistics.topWeightKg
-      }
 
       return {
-        lastPerformedAt,
-        performanceCount: rows.length,
-        setCount,
-        topReps,
-        topWeight: {unit, value: convertKgToApiWeight(topWeightKg, unit)},
-        totalReps,
-        volume: {unit, value: convertKgToApiWeight(volumeKg, unit)},
-        workoutCount: workoutIds.size,
+        lastPerformedAt: appleSecondsToUtcIso(statistics.lastPerformedAt),
+        performanceCount: statistics.performanceCount,
+        setCount: statistics.setCount,
+        topReps: statistics.topReps,
+        topWeight: {unit, value: convertKgToApiWeight(statistics.topWeightKg, unit)},
+        totalReps: statistics.totalReps,
+        volume: {unit, value: convertKgToApiWeight(statistics.volumeKg, unit)},
+        workoutCount: statistics.workoutCount,
       }
     })
   })
@@ -171,13 +133,20 @@ export const exerciseRoutes: FastifyPluginAsyncTypebox = async (app) => {
     return withDeferredReadTransaction(app.db.db, async (db) => {
       const exercise = await getApiExerciseMetadata(db, request.params.exerciseId)
       if (!exercise) throw notFound('exercise-not-found', 'Exercise not found')
-      const rows = await getApiExercisePerformanceRows(db, request.params.exerciseId, {
+      const sort = request.query.sort ?? '-startedAt'
+      const limit = request.query.limit ?? 50
+      const cursor = decodeCursor(request.query.cursor, sort)
+      const {hasMore, rows} = await getApiExercisePerformancePage(db, request.params.exerciseId, {
         ...request.query,
         maxWeightKg: request.query.maxWeight === undefined ? undefined : convertApiWeightToKg(request.query.maxWeight, unit),
         minWeightKg: request.query.minWeight === undefined ? undefined : convertApiWeightToKg(request.query.minWeight, unit),
+      }, {
+        cursor,
+        descending: sort.startsWith('-'),
+        limit,
       })
-      const {nextCursor, page} = filteredRows(rows, request.query)
-      const items = page.map((row) => toPerformance(row, request.params.exerciseId, unit))
+      const items = rows.map((row) => toPerformance(row, request.params.exerciseId, unit))
+      const nextCursor = hasMore && rows.at(-1) ? encodeCursor(rows.at(-1)!, sort) : undefined
       return nextCursor === undefined ? {items} : {items, nextCursor}
     })
   })

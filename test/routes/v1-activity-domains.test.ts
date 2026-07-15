@@ -26,6 +26,27 @@ describe('v1 activity workout and exercise routes', () => {
     return app
   }
 
+  function captureReadStatements(sqlite: Database.Database) {
+    const statements: Array<{parameters: unknown[]; sql: string}> = []
+    const prepare = sqlite.prepare.bind(sqlite)
+    sqlite.prepare = ((source: string) => {
+      const statement = prepare(source)
+      return new Proxy(statement, {
+        get(target, property) {
+          if (property === 'all') {
+            return (...parameters: unknown[]) => {
+              statements.push({parameters, sql: source})
+              return Reflect.apply(target.all, target, parameters)
+            }
+          }
+          const value = Reflect.get(target, property)
+          return typeof value === 'function' ? value.bind(target) : value
+        },
+      })
+    }) as typeof sqlite.prepare
+    return statements
+  }
+
   it('returns cursor-paginated workouts and preserves performed-result IDs with warmups', async () => {
     const app = await createApp()
     try {
@@ -109,6 +130,79 @@ describe('v1 activity workout and exercise routes', () => {
       expect(performances.json().items).to.have.length(1)
       expect(performances.json().items[0]).to.include({exerciseId: 1000, id: 5001, workoutId: 4001})
       expect(performances.json().items[0].sets[0].weight).to.deep.equal({unit: 'kg', value: 105})
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('paginates exercise performances in SQL before hydrating the selected page', async () => {
+    const app = await createApp()
+    try {
+      const statements = captureReadStatements(app.db.sqlite)
+      const firstPage = await app.inject({method: 'GET', url: '/v1/exercises/1000/performances?limit=1'})
+      const setReads = statements.filter((statement) => statement.sql.includes('from "ZGYMSETRESULT"'))
+
+      expect(firstPage.statusCode).to.equal(200)
+      expect(firstPage.json().items.map((item: {id: number}) => item.id)).to.deep.equal([5001])
+      expect(firstPage.json().nextCursor).to.be.a('string')
+      expect(setReads).to.have.length(1)
+      expect(setReads[0].sql).to.match(/"ZEXERCISE" in \(\?\)/)
+      expect(setReads[0].parameters.flat()).to.deep.equal([5001])
+
+      const nextPage = await app.inject({method: 'GET', url: `/v1/exercises/1000/performances?limit=1&cursor=${firstPage.json().nextCursor}`})
+      const ascending = await app.inject({method: 'GET', url: '/v1/exercises/1000/performances?sort=startedAt&limit=1'})
+      const nextAscending = await app.inject({method: 'GET', url: `/v1/exercises/1000/performances?sort=startedAt&limit=1&cursor=${ascending.json().nextCursor}`})
+      expect(nextPage.statusCode).to.equal(200)
+      expect(nextPage.json().items.map((item: {id: number}) => item.id)).to.deep.equal([5000])
+      expect(nextPage.json()).to.not.have.property('nextCursor')
+      expect(ascending.statusCode).to.equal(200)
+      expect(ascending.json().items.map((item: {id: number}) => item.id)).to.deep.equal([5000])
+      expect(nextAscending.statusCode).to.equal(200)
+      expect(nextAscending.json().items.map((item: {id: number}) => item.id)).to.deep.equal([5001])
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('preserves the current nullable performance cursor comparison semantics', async () => {
+    const nullableDbPath = createTestDb()
+    const fixtureDb = new Database(nullableDbPath)
+    fixtureDb.prepare('insert into ZWORKOUTRESULT values (?, ?, ?, ?, ?)').run(4002, 100, 'Day A', null, 3400)
+    fixtureDb.prepare('insert into ZEXERCISERESULT values (?, ?, ?, ?, ?)').run(5005, 4002, 2000, 1000, 300)
+    fixtureDb.prepare('insert into ZGYMSETRESULT values (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(6006, 5005, 100, 7, 110, 770, null, null, 0)
+    fixtureDb.close()
+
+    const app = await createApp(nullableDbPath)
+    try {
+      const descending = await app.inject({method: 'GET', url: '/v1/exercises/1000/performances?limit=2'})
+      const nullCursor = Buffer.from(JSON.stringify({id: 5005, sort: '-startedAt', startedAt: null})).toString('base64url')
+      const afterPageCursor = await app.inject({method: 'GET', url: `/v1/exercises/1000/performances?limit=2&cursor=${descending.json().nextCursor}`})
+      const afterNullCursor = await app.inject({method: 'GET', url: `/v1/exercises/1000/performances?cursor=${nullCursor}`})
+
+      expect(descending.statusCode).to.equal(200)
+      expect(descending.json().items.map((item: {id: number}) => item.id)).to.deep.equal([5001, 5000])
+      expect(descending.json().nextCursor).to.be.a('string')
+      expect(afterPageCursor.statusCode).to.equal(200)
+      expect(afterPageCursor.json().items).to.deep.equal([])
+      expect(afterNullCursor.statusCode).to.equal(200)
+      expect(afterNullCursor.json().items.map((item: {id: number}) => item.id)).to.deep.equal([5001, 5000])
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('computes exercise statistics with SQL aggregates without hydrating performance sets', async () => {
+    const app = await createApp()
+    try {
+      const statements = captureReadStatements(app.db.sqlite)
+      const statistics = await app.inject({method: 'GET', url: '/v1/exercises/1000/statistics?minReps=6&unit=kg'})
+      const setReads = statements.filter((statement) => statement.sql.includes('from "ZGYMSETRESULT"'))
+
+      expect(statistics.statusCode, statistics.body).to.equal(200)
+      expect(statistics.json()).to.include({performanceCount: 1, setCount: 1, topReps: 6, totalReps: 6, workoutCount: 1})
+      expect(statistics.json().topWeight).to.deep.equal({unit: 'kg', value: 105})
+      expect(statistics.json().volume).to.deep.equal({unit: 'kg', value: 630})
+      expect(setReads).to.deep.equal([])
     } finally {
       await app.close()
     }
