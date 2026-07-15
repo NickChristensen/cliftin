@@ -12,6 +12,17 @@ export type ApiRoutineListFilters = {
   sort?: '-name' | '-weekId' | 'name' | 'weekId'
   weekId?: number
 }
+
+export type ApiRoutineListRow = {
+  id: number
+  routine: ApiRoutineSummary
+  sortKey: {
+    routineOrder: null | number
+    weekId: number
+    weekOrder: null | number
+  }
+}
+
 async function getWeekNumbers(db: Kysely<DatabaseSchema>, programIds: number[]): Promise<Map<number, number>> {
   if (programIds.length === 0) return new Map()
 
@@ -36,7 +47,7 @@ async function getWeekNumbers(db: Kysely<DatabaseSchema>, programIds: number[]):
   return numbers
 }
 
-export async function listApiRoutines(db: Kysely<DatabaseSchema>, filters: ApiRoutineListFilters = {}): Promise<ApiRoutineSummary[]> {
+export async function listApiRoutines(db: Kysely<DatabaseSchema>, filters: ApiRoutineListFilters = {}): Promise<ApiRoutineListRow[]> {
   let query = db
     .selectFrom('ZROUTINE as r')
     .leftJoin('ZPERIOD as p', 'p.Z_PK', 'r.ZPERIOD')
@@ -48,12 +59,17 @@ export async function listApiRoutines(db: Kysely<DatabaseSchema>, filters: ApiRo
       'r.ZSOFTDELETED as isDeleted',
       'r.ZUPNEXT as upNext',
       'p.Z_PK as weekId',
+      'p.Z_FOK_WORKOUTPLAN as weekOrder',
+      'r.Z_FOK_PERIOD as routineOrder',
       'planDirect.Z_PK as programIdDirect',
       'planFromPeriod.Z_PK as programIdFromPeriod',
       'planDirect.ZNAME as programNameDirect',
       'planFromPeriod.ZNAME as programNameFromPeriod',
     ])
     .where('r.ZSOFTDELETED', 'is not', 1)
+    // Routine summaries require a week, so a routine linked only directly to a
+    // program is intentionally excluded from this collection.
+    .where('p.Z_PK', 'is not', null)
     .where((eb) => eb.or([eb('planDirect.ZSOFTDELETED', 'is not', 1), eb('planFromPeriod.ZSOFTDELETED', 'is not', 1)]))
 
   if (filters.programId !== undefined) {
@@ -81,22 +97,34 @@ export async function listApiRoutines(db: Kysely<DatabaseSchema>, filters: ApiRo
 
   switch (filters.sort ?? 'weekId') {
     case '-name': {
-      query = query.orderBy('r.ZNAME', 'desc').orderBy('r.Z_PK', 'asc')
+      query = query.orderBy(sql<number>`r.ZNAME is not null`, 'desc').orderBy('r.ZNAME', 'desc').orderBy('r.Z_PK', 'asc')
       break
     }
 
     case '-weekId': {
-      query = query.orderBy('p.Z_FOK_WORKOUTPLAN', 'desc').orderBy('r.Z_FOK_PERIOD', 'desc').orderBy('r.Z_PK', 'desc')
+      query = query
+        .orderBy(sql<number>`p.Z_FOK_WORKOUTPLAN is not null`, 'desc')
+        .orderBy('p.Z_FOK_WORKOUTPLAN', 'desc')
+        .orderBy('p.Z_PK', 'desc')
+        .orderBy(sql<number>`r.Z_FOK_PERIOD is not null`, 'desc')
+        .orderBy('r.Z_FOK_PERIOD', 'desc')
+        .orderBy('r.Z_PK', 'desc')
       break
     }
 
     case 'name': {
-      query = query.orderBy('r.ZNAME', 'asc').orderBy('r.Z_PK', 'asc')
+      query = query.orderBy(sql<number>`r.ZNAME is not null`, 'asc').orderBy('r.ZNAME', 'asc').orderBy('r.Z_PK', 'asc')
       break
     }
 
     default: {
-      query = query.orderBy('p.Z_FOK_WORKOUTPLAN', 'asc').orderBy('r.Z_FOK_PERIOD', 'asc').orderBy('r.Z_PK', 'asc')
+      query = query
+        .orderBy(sql<number>`p.Z_FOK_WORKOUTPLAN is not null`, 'asc')
+        .orderBy('p.Z_FOK_WORKOUTPLAN', 'asc')
+        .orderBy('p.Z_PK', 'asc')
+        .orderBy(sql<number>`r.Z_FOK_PERIOD is not null`, 'asc')
+        .orderBy('r.Z_FOK_PERIOD', 'asc')
+        .orderBy('r.Z_PK', 'asc')
     }
   }
 
@@ -110,11 +138,15 @@ export async function listApiRoutines(db: Kysely<DatabaseSchema>, filters: ApiRo
 
     return [{
       id: row.id,
-      isDeleted: row.isDeleted === 1,
-      isNext: row.upNext === 1,
-      name: row.name,
-      program: {id: programId, name: row.programNameDirect ?? row.programNameFromPeriod},
-      week: {id: row.weekId, number: weekNumbers.get(row.weekId) ?? 1},
+      routine: {
+        id: row.id,
+        isDeleted: row.isDeleted === 1,
+        isNext: row.upNext === 1,
+        name: row.name,
+        program: {id: programId, name: row.programNameDirect ?? row.programNameFromPeriod},
+        week: {id: row.weekId, number: weekNumbers.get(row.weekId) ?? 1},
+      },
+      sortKey: {routineOrder: row.routineOrder, weekId: row.weekId, weekOrder: row.weekOrder},
     }]
   })
 }

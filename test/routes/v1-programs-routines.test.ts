@@ -179,4 +179,79 @@ describe('v1 programs and routines routes', () => {
       await app.close()
     }
   })
+
+  it('keeps filtered name cursors stable when rows are inserted between pages', async () => {
+    const app = await createApp()
+    const writer = new Database(dbPath)
+    try {
+      for (const sort of ['name', '-name'] as const) {
+        const first = await app.inject({method: 'GET', url: `/v1/routines?q=day&sort=${sort}&limit=1`})
+        expect(first.statusCode).to.equal(200)
+        expect(first.json().items.map((routine: {id: number}) => routine.id)).to.deep.equal(sort === 'name' ? [100] : [101])
+
+        // Insert a matching row before the cursor's sort value. It must not
+        // reappear on the next page (or cause the original next row to skip).
+        const insertedName = sort === 'name' ? 'Day' : 'Day Z'
+        writer.prepare('insert into ZROUTINE values (?, ?, ?, ?, ?, ?, ?)').run(103, insertedName, 0, 0, 10, null, 50)
+        const second = await app.inject({method: 'GET', url: `/v1/routines?q=day&sort=${sort}&limit=1&cursor=${first.json().nextCursor}`})
+
+        expect(second.statusCode).to.equal(200)
+        expect(second.json().items.map((routine: {id: number}) => routine.id)).to.deep.equal(sort === 'name' ? [101] : [100])
+        writer.prepare('delete from ZROUTINE where Z_PK = 103').run()
+      }
+    } finally {
+      writer.prepare('delete from ZROUTINE where Z_PK = 103').run()
+      writer.close()
+      await app.close()
+    }
+  })
+
+  it('keeps weekId cursors stable under inserts for both directions and week filters', async () => {
+    const app = await createApp()
+    const writer = new Database(dbPath)
+    try {
+      for (const sort of ['weekId', '-weekId'] as const) {
+        const first = await app.inject({method: 'GET', url: `/v1/routines?weekId=10&sort=${sort}&limit=1`})
+        expect(first.statusCode).to.equal(200)
+        expect(first.json().items.map((routine: {id: number}) => routine.id)).to.deep.equal(sort === 'weekId' ? [100] : [101])
+
+        // This row sorts before the first page in either direction. A stable
+        // keyset cursor should still advance to the original second row.
+        writer.prepare('insert into ZROUTINE values (?, ?, ?, ?, ?, ?, ?)').run(104, 'Inserted', 0, 0, 10, null, sort === 'weekId' ? 50 : 250)
+        const second = await app.inject({method: 'GET', url: `/v1/routines?weekId=10&sort=${sort}&limit=1&cursor=${first.json().nextCursor}`})
+
+        expect(second.statusCode).to.equal(200)
+        expect(second.json().items.map((routine: {id: number}) => routine.id)).to.deep.equal(sort === 'weekId' ? [101] : [100])
+        writer.prepare('delete from ZROUTINE where Z_PK = 104').run()
+      }
+    } finally {
+      writer.prepare('delete from ZROUTINE where Z_PK = 104').run()
+      writer.close()
+      await app.close()
+    }
+  })
+
+  it('keeps a name cursor stable when a consumed row is deleted', async () => {
+    const app = await createApp()
+    const writer = new Database(dbPath)
+    try {
+      writer.prepare('insert into ZROUTINE values (?, ?, ?, ?, ?, ?, ?)').run(105, 'Day ', 0, 0, 10, null, 50)
+      const first = await app.inject({method: 'GET', url: '/v1/routines?q=day&sort=name&limit=2'})
+      expect(first.json().items.map((routine: {id: number}) => routine.id)).to.deep.equal([105, 100])
+
+      const changedFilter = await app.inject({method: 'GET', url: `/v1/routines?q=bench&sort=name&limit=2&cursor=${first.json().nextCursor}`})
+      expect(changedFilter.statusCode).to.equal(400)
+      expect(changedFilter.json()).to.include({code: 'invalid-cursor'})
+
+      // Remove a row already consumed by page one. Page two must still begin
+      // at the original boundary rather than duplicate or skip the next row.
+      writer.prepare('delete from ZROUTINE where Z_PK = 105').run()
+      const second = await app.inject({method: 'GET', url: `/v1/routines?q=day&sort=name&limit=2&cursor=${first.json().nextCursor}`})
+      expect(second.json().items.map((routine: {id: number}) => routine.id)).to.deep.equal([101])
+    } finally {
+      writer.prepare('delete from ZROUTINE where Z_PK = 105').run()
+      writer.close()
+      await app.close()
+    }
+  })
 })

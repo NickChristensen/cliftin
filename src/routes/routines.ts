@@ -10,26 +10,19 @@ export const routineRoutes: FastifyPluginAsyncTypebox = async (app) => {
     const {cursor, limit, sort = 'weekId', ...filters} = request.query
     return withDeferredReadTransaction(app.db.db, async (db) => {
       const rows = await listApiRoutines(db, {...filters, sort})
-
-      if (sort === 'weekId' || sort === '-weekId') {
-        const positions = new Map(rows.map((routine, index) => [routine.id, index]))
-        return paginateRows(rows, {
-          cursor,
-          descending: false,
-          limit,
-          sort,
-          value: (routine) => positions.get(routine.id)!,
-        })
-      }
-
       const sortField = sort.startsWith('-') ? sort.slice(1) : sort
-      return paginateRows(rows, {
+      const page = paginateRows(rows, {
         cursor,
         descending: sort.startsWith('-'),
+        filter: JSON.stringify({exerciseId: filters.exerciseId ?? null, programId: filters.programId ?? null, q: filters.q ?? null, weekId: filters.weekId ?? null}),
+        idDescending: sort === '-weekId',
         limit,
         sort,
-        value: (routine) => (sortField === 'name' ? routine.name : routine.week.id),
+        value: (row) => (sortField === 'name' ? [row.routine.name] : [row.sortKey.weekOrder, row.sortKey.weekId, row.sortKey.routineOrder]),
+        valueLength: sortField === 'name' ? 1 : 3,
       })
+
+      return {...page, items: page.items.map((row) => row.routine)}
     })
   })
 
