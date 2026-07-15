@@ -1,78 +1,64 @@
 import {Kysely} from 'kysely'
 
 import {DatabaseSchema} from '../db.js'
-import {formatExerciseDisplayName} from '../names.js'
 import {normalizeRpe} from '../rpe.js'
-import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
-import {NextWorkoutDetail, WorkoutDetail, WorkoutExerciseDetail, WorkoutSummary} from '../types.js'
-import {convertKgToDisplayVolume, convertKgToDisplayWeight, resolveGlobalWeightUnit} from '../units.js'
-import {getProgramDetail, resolveProgramSelector} from './programs.js'
-import {resolveIdOrName} from './selectors.js'
+import {dateRangeToAppleSeconds} from '../time.js'
 
-export type WorkoutFilters = {
+export type ApiWorkoutListFilters = {
   from?: string
   limit?: number
-  on?: string
-  program?: string
-  routine?: string
+  programId?: number
+  routineId?: number
   to?: string
+}
+
+export type ApiWorkoutListRow = {
+  durationSeconds: null | number
+  id: number
+  programId: null | number
+  programName: null | string
+  routineId: null | number
+  routineName: null | string
+  startDate: null | number
+}
+
+export type ApiPerformedSetRow = {
+  id: number
+  isWarmup: boolean
+  reps: null | number
+  rpe: null | number
+  timeSeconds: null | number
+  volumeKg: null | number
+  weightKg: null | number
+}
+
+export type ApiPerformedExerciseRow = {
+  exerciseId: null | number
+  id: number
+  isUserCreated: boolean
+  name: null | string
+  sets: ApiPerformedSetRow[]
+}
+
+export type ApiWorkoutDetailRow = ApiWorkoutListRow & {
+  exercises: ApiPerformedExerciseRow[]
 }
 
 function asBool(value: null | number): boolean {
   return value === 1
 }
 
-export async function getNextWorkoutDetail(db: Kysely<DatabaseSchema>): Promise<NextWorkoutDetail> {
-  const programId = await resolveProgramSelector(db, undefined, true)
-  const programDetail = await getProgramDetail(db, programId)
-
-  const nextRoutines = await db
-    .selectFrom('ZROUTINE as r')
-    .leftJoin('ZPERIOD as p', 'p.Z_PK', 'r.ZPERIOD')
-    .select(['r.Z_PK as id', 'r.ZPERIOD as weekId'])
-    .where('r.ZUPNEXT', '=', 1)
-    .where('r.ZSOFTDELETED', 'is not', 1)
-    .where((eb) => eb.or([eb('p.ZWORKOUTPLAN', '=', programId), eb('r.ZWORKOUTPLAN', '=', programId)]))
-    .orderBy('p.Z_FOK_WORKOUTPLAN', 'asc')
-    .orderBy('r.Z_FOK_PERIOD', 'asc')
-    .orderBy('r.Z_PK', 'asc')
-    .execute()
-
-  if (nextRoutines.length === 0) {
-    throw new Error(`No up-next routine found for active program ${programDetail.program.name}.`)
-  }
-
-  if (nextRoutines.length > 1) {
-    throw new Error(`Expected exactly one up-next routine for active program ${programDetail.program.name}. Found ${nextRoutines.length}.`)
-  }
-
-  const nextRoutine = nextRoutines[0]
-  const weekIndex = programDetail.weeks.findIndex((week) => week.id === nextRoutine.weekId)
-  if (weekIndex === -1) {
-    throw new Error(`Up-next routine ${nextRoutine.id} is linked to unknown week ${nextRoutine.weekId}.`)
-  }
-
-  const week = programDetail.weeks[weekIndex]
-  const routine = week.routines.find((entry) => entry.id === nextRoutine.id)
-
-  if (!routine) {
-    throw new Error(`Up-next routine ${nextRoutine.id} was not found in active program detail.`)
-  }
-
-  return {
-    program: programDetail.program,
-    routine,
-    week: {
-      id: week.id,
-      number: weekIndex + 1,
-    },
-    workout: null,
-  }
-}
-
-export async function listWorkouts(db: Kysely<DatabaseSchema>, filters: WorkoutFilters): Promise<WorkoutSummary[]> {
-  const dateRange = dateRangeToAppleSeconds({from: filters.from, on: filters.on, to: filters.to})
-
+/**
+ * HTTP-facing rows preserve database timestamps and kg values so the route
+ * layer can apply its explicit unit and UTC contracts.
+ */
+export async function listApiWorkouts(
+  db: Kysely<DatabaseSchema>,
+  filters: ApiWorkoutListFilters,
+): Promise<ApiWorkoutListRow[]> {
+  const dateRange = dateRangeToAppleSeconds({from: filters.from, to: filters.to})
+  // The fallback program relationship is selected directly so HTTP output does
+  // not need to infer an identifier from a display name.
   let query = db
     .selectFrom('ZWORKOUTRESULT as wr')
     .leftJoin('ZROUTINE as r', 'r.Z_PK', 'wr.ZROUTINE')
@@ -82,132 +68,87 @@ export async function listWorkouts(db: Kysely<DatabaseSchema>, filters: WorkoutF
     .select([
       'wr.Z_PK as id',
       'wr.ZSTARTDATE as startDate',
-      'wr.ZDURATION as duration',
+      'wr.ZDURATION as durationSeconds',
+      'r.Z_PK as routineId',
       'wr.ZROUTINENAME as routineNameFromResult',
       'r.ZNAME as routineNameFromPlan',
+      'pDirect.Z_PK as programIdDirect',
+      'pFromPeriod.Z_PK as programIdFromPeriod',
       'pDirect.ZNAME as programNameDirect',
       'pFromPeriod.ZNAME as programNameFromPeriod',
     ])
 
-  if (filters.program) {
-    const programId = await resolveIdOrName(db, 'ZWORKOUTPLAN', filters.program)
-    query = query.where((eb) => eb.or([eb('r.ZWORKOUTPLAN', '=', programId), eb('per.ZWORKOUTPLAN', '=', programId)]))
+  if (filters.programId !== undefined) {
+    query = query.where((eb) => eb.or([eb('r.ZWORKOUTPLAN', '=', filters.programId!), eb('per.ZWORKOUTPLAN', '=', filters.programId!)]))
   }
 
-  if (filters.routine) {
-    const routineId = await resolveIdOrName(db, 'ZROUTINE', filters.routine)
-    query = query.where('wr.ZROUTINE', '=', routineId)
-  }
-
+  if (filters.routineId !== undefined) query = query.where('wr.ZROUTINE', '=', filters.routineId)
   if (dateRange.from !== undefined) query = query.where('wr.ZSTARTDATE', '>=', dateRange.from)
   if (dateRange.to !== undefined) query = query.where('wr.ZSTARTDATE', '<=', dateRange.to)
 
-  query = query.orderBy('wr.ZSTARTDATE', 'desc')
-
-  if (filters.limit !== undefined) {
-    query = query.limit(filters.limit)
-  }
+  query = query.orderBy('wr.ZSTARTDATE', 'desc').orderBy('wr.Z_PK', 'desc')
+  if (filters.limit !== undefined) query = query.limit(filters.limit)
 
   const rows = await query.execute()
-
   return rows.map((row) => ({
-    date: appleSecondsToIso(row.startDate),
-    duration: row.duration,
+    durationSeconds: row.durationSeconds,
     id: row.id,
-    program: row.programNameDirect ?? row.programNameFromPeriod,
-    routine: row.routineNameFromResult ?? row.routineNameFromPlan,
+    programId: row.programIdDirect ?? row.programIdFromPeriod,
+    programName: row.programNameDirect ?? row.programNameFromPeriod,
+    routineId: row.routineId,
+    routineName: row.routineNameFromResult ?? row.routineNameFromPlan,
+    startDate: row.startDate,
   }))
 }
 
-export async function getWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: number): Promise<WorkoutDetail> {
-  const unitPreference = await resolveGlobalWeightUnit(db)
+export async function getApiWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId: number): Promise<ApiWorkoutDetailRow | null> {
+  const exists = await db.selectFrom('ZWORKOUTRESULT').select('Z_PK as id').where('Z_PK', '=', workoutId).executeTakeFirst()
+  if (!exists) return null
 
-  const workout = await db
+  const detail = await db
     .selectFrom('ZWORKOUTRESULT as wr')
     .leftJoin('ZROUTINE as r', 'r.Z_PK', 'wr.ZROUTINE')
     .leftJoin('ZPERIOD as per', 'per.Z_PK', 'r.ZPERIOD')
     .leftJoin('ZWORKOUTPLAN as pDirect', 'pDirect.Z_PK', 'r.ZWORKOUTPLAN')
     .leftJoin('ZWORKOUTPLAN as pFromPeriod', 'pFromPeriod.Z_PK', 'per.ZWORKOUTPLAN')
     .select([
-      'wr.Z_PK as id',
-      'wr.ZSTARTDATE as startDate',
-      'wr.ZDURATION as duration',
-      'wr.ZROUTINENAME as routineNameFromResult',
-      'r.ZNAME as routineNameFromPlan',
-      'pDirect.ZNAME as programNameDirect',
-      'pFromPeriod.ZNAME as programNameFromPeriod',
+      'wr.Z_PK as id', 'wr.ZSTARTDATE as startDate', 'wr.ZDURATION as durationSeconds', 'r.Z_PK as routineId',
+      'wr.ZROUTINENAME as routineNameFromResult', 'r.ZNAME as routineNameFromPlan',
+      'pDirect.Z_PK as programIdDirect', 'pFromPeriod.Z_PK as programIdFromPeriod',
+      'pDirect.ZNAME as programNameDirect', 'pFromPeriod.ZNAME as programNameFromPeriod',
     ])
     .where('wr.Z_PK', '=', workoutId)
-    .executeTakeFirst()
-
-  if (!workout) throw new Error(`Workout not found: ${workoutId}`)
+    .executeTakeFirstOrThrow()
 
   const exerciseRows = await db
     .selectFrom('ZEXERCISERESULT as er')
     .leftJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'er.ZEXERCISE')
-    .select([
-      'er.Z_PK as exerciseResultId',
-      'ei.Z_PK as exerciseId',
-      'ei.ZISUSERCREATED as isUserCreated',
-      'ei.ZNAME as exerciseName',
-    ])
+    .select(['er.Z_PK as id', 'ei.Z_PK as exerciseId', 'ei.ZNAME as name', 'ei.ZISUSERCREATED as isUserCreated'])
     .where('er.ZWORKOUT', '=', workoutId)
     .orderBy('er.Z_FOK_WORKOUT', 'asc')
     .orderBy('er.Z_PK', 'asc')
     .execute()
-
-  const exerciseResultIds = exerciseRows.map((row) => row.exerciseResultId)
-  const setRows =
-    exerciseResultIds.length === 0
-      ? []
-      : await db
-          .selectFrom('ZGYMSETRESULT')
-          .select([
-            'Z_PK as id',
-            'ZEXERCISE as exerciseResultId',
-            'ZREPS as reps',
-            'ZRPE as rpe',
-            'ZWEIGHT as weight',
-            'ZTIME as timeSeconds',
-            'ZVOLUME as volume',
-            'ZWARMUPSET as warmupSet',
-          ])
-          .where('ZEXERCISE', 'in', exerciseResultIds)
-          .orderBy('Z_FOK_EXERCISE', 'asc')
-          .orderBy('Z_PK', 'asc')
-          .execute()
-
-  const setsByExercise = new Map<number, WorkoutExerciseDetail['sets']>()
-  for (const row of setRows) {
-    if (row.exerciseResultId === null) continue
-
-    const current = setsByExercise.get(row.exerciseResultId) ?? []
-    current.push({
-      id: row.id,
-      isWarmup: asBool(row.warmupSet),
-      reps: row.reps,
-      rpe: normalizeRpe(row.rpe),
-      timeSeconds: row.timeSeconds,
-      volume: convertKgToDisplayVolume(row.volume, unitPreference),
-      weight: convertKgToDisplayWeight(row.weight, unitPreference),
-    })
-
-    setsByExercise.set(row.exerciseResultId, current)
+  const ids = exerciseRows.map((row) => row.id)
+  const sets = ids.length === 0 ? [] : await db.selectFrom('ZGYMSETRESULT').select([
+    'Z_PK as id', 'ZEXERCISE as performedExerciseId', 'ZREPS as reps', 'ZRPE as rpe', 'ZTIME as timeSeconds',
+    'ZVOLUME as volumeKg', 'ZWEIGHT as weightKg', 'ZWARMUPSET as warmupSet',
+  ]).where('ZEXERCISE', 'in', ids).orderBy('Z_FOK_EXERCISE', 'asc').orderBy('Z_PK', 'asc').execute()
+  const setsByExercise = new Map<number, ApiPerformedSetRow[]>()
+  for (const set of sets) {
+    if (set.performedExerciseId === null) continue
+    const entries = setsByExercise.get(set.performedExerciseId) ?? []
+    entries.push({id: set.id, isWarmup: asBool(set.warmupSet), reps: set.reps, rpe: normalizeRpe(set.rpe), timeSeconds: set.timeSeconds, volumeKg: set.volumeKg, weightKg: set.weightKg})
+    setsByExercise.set(set.performedExerciseId, entries)
   }
 
-  const exercises: WorkoutExerciseDetail[] = exerciseRows.map((row) => ({
-    exerciseId: row.exerciseId,
-    exerciseResultId: row.exerciseResultId,
-    name: formatExerciseDisplayName(row.exerciseName, asBool(row.isUserCreated)),
-    sets: setsByExercise.get(row.exerciseResultId) ?? [],
-  }))
-
   return {
-    date: appleSecondsToIso(workout.startDate),
-    duration: workout.duration,
-    exercises,
-    id: workout.id,
-    program: workout.programNameDirect ?? workout.programNameFromPeriod,
-    routine: workout.routineNameFromResult ?? workout.routineNameFromPlan,
+    durationSeconds: detail.durationSeconds,
+    exercises: exerciseRows.map((row) => ({exerciseId: row.exerciseId, id: row.id, isUserCreated: asBool(row.isUserCreated), name: row.name, sets: setsByExercise.get(row.id) ?? []})),
+    id: detail.id,
+    programId: detail.programIdDirect ?? detail.programIdFromPeriod,
+    programName: detail.programNameDirect ?? detail.programNameFromPeriod,
+    routineId: detail.routineId,
+    routineName: detail.routineNameFromResult ?? detail.routineNameFromPlan,
+    startDate: detail.startDate,
   }
 }

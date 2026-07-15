@@ -1,140 +1,142 @@
-import {Kysely} from 'kysely'
+import {Kysely, sql} from 'kysely'
 
+import {notFound} from '../../http/errors.js'
 import {DatabaseSchema} from '../db.js'
 import {formatExerciseDisplayName} from '../names.js'
 import {normalizeRpe} from '../rpe.js'
-import {appleSecondsToIso} from '../time.js'
-import {PlannedExercise, PlannedSet, ProgramDetailTree, ProgramRoutine, ProgramSummary, ProgramWeek} from '../types.js'
-import {convertKgToDisplayWeight, resolveProgramWeightUnit} from '../units.js'
-import {resolveIdOrName} from './selectors.js'
+import {appleSecondsToUtcIso} from '../time.js'
+import {ApiPlannedExercise, ApiPlannedSet, ApiProgram, ApiProgramPlan, ApiWeightUnit} from '../types.js'
+import {convertKgToApiWeight} from '../units.js'
 
 function asBool(value: null | number): boolean {
   return value === 1
 }
 
-type PlannedExerciseSummary = {
-  plannedReps: null | number
-  plannedSets: null | number
-  plannedTimeSeconds: null | number
-  plannedWeight: null | number
+function apiWeight(value: null | number, unit: ApiWeightUnit): {unit: ApiWeightUnit; value: null | number} {
+  return {unit, value: convertKgToApiWeight(value, unit)}
 }
 
-function buildPlannedFallbackSets(
-  summary: PlannedExerciseSummary,
-  unitPreference: Awaited<ReturnType<typeof resolveProgramWeightUnit>>,
-): PlannedSet[] {
-  return Array.from({length: Math.max(summary.plannedSets ?? 1, 1)}, () => ({
-    id: null,
-    reps: summary.plannedReps,
-    rpe: null,
-    timeSeconds: summary.plannedTimeSeconds,
-    weight: convertKgToDisplayWeight(summary.plannedWeight, unitPreference),
-  }))
-}
-
-function capIndividualSets(sets: PlannedSet[], plannedSets: null | number): PlannedSet[] {
+function capApiIndividualSets(sets: ApiPlannedSet[], plannedSets: null | number): ApiPlannedSet[] {
   return plannedSets !== null && plannedSets > 0 ? sets.slice(0, plannedSets) : sets
 }
 
-export async function listPrograms(db: Kysely<DatabaseSchema>): Promise<ProgramSummary[]> {
+async function getSelectedProgramId(db: Kysely<DatabaseSchema>): Promise<null | number> {
   const selectedProgram = await db
     .selectFrom('ZWORKOUTPROGRAMSINFO as info')
     .innerJoin('ZWORKOUTPLAN as plan', 'plan.ZID', 'info.ZSELECTEDWORKOUTPROGRAMID')
     .select('plan.Z_PK as id')
     .where('info.ZSELECTEDWORKOUTPROGRAMID', 'is not', null)
     .executeTakeFirst()
+
+  return selectedProgram?.id ?? null
+}
+
+function toApiProgram(
+  row: {dateAdded: null | number; id: number; isCurrent: null | number; isDeleted: null | number; isTemplate: null | number; name: null | string},
+  selectedProgramId: null | number,
+): ApiProgram {
+  return {
+    dateAdded: appleSecondsToUtcIso(row.dateAdded),
+    id: row.id,
+    isActive: selectedProgramId === null ? asBool(row.isCurrent) : row.id === selectedProgramId,
+    isDeleted: asBool(row.isDeleted),
+    isTemplate: asBool(row.isTemplate),
+    name: row.name,
+  }
+}
+
+export type ApiProgramListFilters = {
+  q?: string
+  sort?: '-dateAdded' | '-name' | 'dateAdded' | 'name'
+}
+
+export async function listApiPrograms(db: Kysely<DatabaseSchema>, filters: ApiProgramListFilters = {}): Promise<ApiProgram[]> {
+  const selectedProgramId = await getSelectedProgramId(db)
+  let query = db
+    .selectFrom('ZWORKOUTPLAN')
+    .select([
+      'Z_PK as id',
+      'ZNAME as name',
+      'ZISCURRENT as isCurrent',
+      'ZISTEMPLATE as isTemplate',
+      'ZSOFTDELETED as isDeleted',
+      'ZDATEADDED as dateAdded',
+    ])
+    .where('ZSOFTDELETED', 'is not', 1)
+
+  if (filters.q) {
+    const q = `%${filters.q.toLowerCase()}%`
+    query = query.where(sql<boolean>`lower(ZNAME) like ${q}`)
+  }
+
+  switch (filters.sort ?? '-dateAdded') {
+    case '-name': {
+      query = query.orderBy('ZNAME', 'desc').orderBy('Z_PK', 'asc')
+      break
+    }
+
+    case 'dateAdded': {
+      query = query.orderBy('ZDATEADDED', 'asc').orderBy('Z_PK', 'asc')
+      break
+    }
+
+    case 'name': {
+      query = query.orderBy('ZNAME', 'asc').orderBy('Z_PK', 'asc')
+      break
+    }
+
+    default: {
+      query = query.orderBy('ZDATEADDED', 'desc').orderBy('Z_PK', 'asc')
+    }
+  }
+
+  return (await query.execute()).map((row) => toApiProgram(row, selectedProgramId))
+}
+
+export async function getApiProgram(db: Kysely<DatabaseSchema>, programId: number): Promise<ApiProgram> {
+  const [selectedProgramId, row] = await Promise.all([
+    getSelectedProgramId(db),
+    db
+      .selectFrom('ZWORKOUTPLAN')
+      .select([
+        'Z_PK as id',
+        'ZNAME as name',
+        'ZISCURRENT as isCurrent',
+        'ZISTEMPLATE as isTemplate',
+        'ZSOFTDELETED as isDeleted',
+        'ZDATEADDED as dateAdded',
+      ])
+      .where('Z_PK', '=', programId)
+      .executeTakeFirst(),
+  ])
+
+  if (!row) throw notFound('program-not-found', `Program not found: ${programId}`)
+  return toApiProgram(row, selectedProgramId)
+}
+
+export async function getActiveApiProgram(db: Kysely<DatabaseSchema>): Promise<ApiProgram> {
+  const selectedProgramId = await getSelectedProgramId(db)
+  if (selectedProgramId !== null) return getApiProgram(db, selectedProgramId)
 
   const rows = await db
     .selectFrom('ZWORKOUTPLAN')
-    .select([
-      'Z_PK as id',
-      'ZNAME as name',
-      'ZISCURRENT as isActive',
-      'ZISTEMPLATE as isTemplate',
-      'ZDATEADDED as dateAdded',
-    ])
+    .select('Z_PK as id')
+    .where('ZISCURRENT', '=', 1)
     .where('ZSOFTDELETED', 'is not', 1)
-    .orderBy('ZDATEADDED', 'desc')
     .execute()
 
-  return rows.map((row) => ({
-    dateAdded: appleSecondsToIso(row.dateAdded),
-    id: row.id,
-    isActive: selectedProgram ? row.id === selectedProgram.id : asBool(row.isActive),
-    isTemplate: asBool(row.isTemplate),
-    name: row.name ?? '(unnamed)',
-  }))
+  if (rows.length === 0) throw notFound('active-program-not-found', 'No active program found.')
+  if (rows.length > 1) throw new Error(`Expected exactly one active program. Found ${rows.length}.`)
+  return getApiProgram(db, rows[0].id)
 }
 
-export async function resolveProgramSelector(
+export async function getApiProgramPlan(
   db: Kysely<DatabaseSchema>,
-  selector: string | undefined,
-  activeOnly: boolean,
-): Promise<number> {
-  if (activeOnly) {
-    const selectedProgram = await db
-      .selectFrom('ZWORKOUTPROGRAMSINFO as info')
-      .innerJoin('ZWORKOUTPLAN as plan', 'plan.ZID', 'info.ZSELECTEDWORKOUTPROGRAMID')
-      .select('plan.Z_PK as id')
-      .where('info.ZSELECTEDWORKOUTPROGRAMID', 'is not', null)
-      .executeTakeFirst()
-
-    if (selectedProgram) return selectedProgram.id
-
-    const fallbackRows = await db
-      .selectFrom('ZWORKOUTPLAN')
-      .select(['Z_PK as id'])
-      .where('ZISCURRENT', '=', 1)
-      .execute()
-
-    if (fallbackRows.length !== 1) {
-      throw new Error(
-        `Expected exactly one active program. Found ${fallbackRows.length} via ZISCURRENT and no selected program in ZWORKOUTPROGRAMSINFO.`,
-      )
-    }
-
-    return fallbackRows[0].id
-  }
-
-  if (!selector) throw new Error('Program selector is required.')
-
-  const programId = await resolveIdOrName(db, 'ZWORKOUTPLAN', selector)
-  const nonDeleted = await db
-    .selectFrom('ZWORKOUTPLAN')
-    .select('Z_PK as id')
-    .where('Z_PK', '=', programId)
-    .where('ZSOFTDELETED', 'is not', 1)
-    .executeTakeFirst()
-
-  if (!nonDeleted) throw new Error(`Program ${programId} is soft-deleted and hidden from CLI output.`)
-
-  return programId
-}
-
-export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: number): Promise<ProgramDetailTree> {
-  const unitPreference = await resolveProgramWeightUnit(db, programId)
-
-  const selectedProgram = await db
-    .selectFrom('ZWORKOUTPROGRAMSINFO as info')
-    .innerJoin('ZWORKOUTPLAN as plan', 'plan.ZID', 'info.ZSELECTEDWORKOUTPROGRAMID')
-    .select('plan.Z_PK as id')
-    .where('info.ZSELECTEDWORKOUTPROGRAMID', 'is not', null)
-    .executeTakeFirst()
-
-  const programRow = await db
-    .selectFrom('ZWORKOUTPLAN')
-    .select([
-      'Z_PK as id',
-      'ZNAME as name',
-      'ZISCURRENT as isActive',
-      'ZISTEMPLATE as isTemplate',
-      'ZDATEADDED as dateAdded',
-    ])
-    .where('Z_PK', '=', programId)
-    .where('ZSOFTDELETED', 'is not', 1)
-    .executeTakeFirst()
-
-  if (!programRow) throw new Error(`Program not found: ${programId}`)
+  programId: number,
+  unit: ApiWeightUnit,
+  options: {includeDeletedRoutines?: boolean} = {},
+): Promise<ApiProgramPlan> {
+  await getApiProgram(db, programId)
 
   const weeks = await db
     .selectFrom('ZPERIOD')
@@ -144,17 +146,18 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
     .orderBy('Z_PK', 'asc')
     .execute()
 
-  const routines = await db
+  let routinesQuery = db
     .selectFrom('ZROUTINE as r')
     .leftJoin('ZPERIOD as p', 'p.Z_PK', 'r.ZPERIOD')
     .select(['r.Z_PK as id', 'r.ZNAME as name', 'r.ZPERIOD as weekId'])
     .where((eb) => eb.or([eb('p.ZWORKOUTPLAN', '=', programId), eb('r.ZWORKOUTPLAN', '=', programId)]))
-    .where('r.ZSOFTDELETED', 'is not', 1)
     .orderBy('r.Z_FOK_PERIOD', 'asc')
     .orderBy('r.Z_PK', 'asc')
-    .execute()
 
-  const exercises = await db
+  if (!options.includeDeletedRoutines) routinesQuery = routinesQuery.where('r.ZSOFTDELETED', 'is not', 1)
+  const routines = await routinesQuery.execute()
+
+  let exercisesQuery = db
     .selectFrom('ZROUTINE as r')
     .leftJoin('ZPERIOD as p', 'p.Z_PK', 'r.ZPERIOD')
     .leftJoin('Z_12ROUTINES as j', 'j.Z_28ROUTINES', 'r.Z_PK')
@@ -174,12 +177,13 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       'ei.ZNAME as exerciseName',
     ])
     .where((eb) => eb.or([eb('p.ZWORKOUTPLAN', '=', programId), eb('r.ZWORKOUTPLAN', '=', programId)]))
-    .where('r.ZSOFTDELETED', 'is not', 1)
     .where('ec.Z_PK', 'is not', null)
     .orderBy('r.Z_PK', 'asc')
     .orderBy('j.Z_FOK_12EXERCISES', 'asc')
     .orderBy('ec.Z_PK', 'asc')
-    .execute()
+
+  if (!options.includeDeletedRoutines) exercisesQuery = exercisesQuery.where('r.ZSOFTDELETED', 'is not', 1)
+  const exercises = await exercisesQuery.execute()
 
   const exerciseConfigIds = exercises
     .map((exercise) => exercise.exerciseConfigId)
@@ -203,76 +207,55 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
           .orderBy('ZSETINDEX', 'asc')
           .execute()
 
-  const setsByExerciseConfig = new Map<number, PlannedSet[]>()
+  const setsByExerciseConfig = new Map<number, ApiPlannedSet[]>()
   for (const row of setRows) {
     if (row.exerciseConfigId === null) continue
-
-    const current = setsByExerciseConfig.get(row.exerciseConfigId) ?? []
-    current.push({
+    const sets = setsByExerciseConfig.get(row.exerciseConfigId) ?? []
+    sets.push({
       id: row.id,
       reps: row.reps,
       rpe: normalizeRpe(row.rpe),
       timeSeconds: row.timeSeconds,
-      weight: convertKgToDisplayWeight(row.weight, unitPreference),
+      weight: apiWeight(row.weight, unit),
     })
-    setsByExerciseConfig.set(row.exerciseConfigId, current)
+    setsByExerciseConfig.set(row.exerciseConfigId, sets)
   }
 
-  const exercisesByRoutine = new Map<number, PlannedExercise[]>()
+  const exercisesByRoutine = new Map<number, ApiPlannedExercise[]>()
   for (const row of exercises) {
     if (row.exerciseConfigId === null) continue
-
-    const current = exercisesByRoutine.get(row.routineId) ?? []
     const explicitSets = setsByExerciseConfig.get(row.exerciseConfigId) ?? []
-    const plannedSummary: PlannedExerciseSummary = {
-      plannedReps: row.plannedReps,
-      plannedSets: row.plannedSets,
-      plannedTimeSeconds: row.plannedTimeSeconds,
-      plannedWeight: row.plannedWeight,
-    }
-    const fallbackSet = buildPlannedFallbackSets(plannedSummary, unitPreference)
-    const selectedSets = row.useIndividualSets === 1 ? capIndividualSets(explicitSets, row.plannedSets) : fallbackSet
-
-    current.push({
-      exerciseConfigId: row.exerciseConfigId,
-      id: row.exerciseId,
+    const fallbackSets = Array.from({length: Math.max(row.plannedSets ?? 1, 1)}, () => ({
+      id: null,
+      reps: row.plannedReps,
+      rpe: null,
+      timeSeconds: row.plannedTimeSeconds,
+      weight: apiWeight(row.plannedWeight, unit),
+    }))
+    const sets = row.useIndividualSets === 1 ? capApiIndividualSets(explicitSets, row.plannedSets) : fallbackSets
+    const routineExercises = exercisesByRoutine.get(row.routineId) ?? []
+    routineExercises.push({
+      exerciseId: row.exerciseId,
+      id: row.exerciseConfigId,
       name: formatExerciseDisplayName(row.exerciseName, asBool(row.isUserCreated)),
-      plannedReps: row.plannedReps,
-      plannedSets: row.plannedSets,
-      plannedTimeSeconds: row.plannedTimeSeconds,
-      plannedWeight: convertKgToDisplayWeight(row.plannedWeight, unitPreference),
-      sets: selectedSets,
+      sets,
     })
-
-    exercisesByRoutine.set(row.routineId, current)
+    exercisesByRoutine.set(row.routineId, routineExercises)
   }
 
-  const routinesByWeek = new Map<number, ProgramRoutine[]>()
+  const routinesByWeek = new Map<number, ApiProgramPlan['weeks'][number]['routines']>()
   for (const routine of routines) {
     if (routine.weekId === null) continue
-
-    const current = routinesByWeek.get(routine.weekId) ?? []
-    current.push({
+    const weekRoutines = routinesByWeek.get(routine.weekId) ?? []
+    weekRoutines.push({
       exercises: exercisesByRoutine.get(routine.id) ?? [],
       id: routine.id,
       name: routine.name,
     })
-    routinesByWeek.set(routine.weekId, current)
+    routinesByWeek.set(routine.weekId, weekRoutines)
   }
 
-  const weekTree: ProgramWeek[] = weeks.map((week) => ({
-    id: week.id,
-    routines: routinesByWeek.get(week.id) ?? [],
-  }))
-
   return {
-    program: {
-      dateAdded: appleSecondsToIso(programRow.dateAdded),
-      id: programRow.id,
-      isActive: selectedProgram ? programRow.id === selectedProgram.id : asBool(programRow.isActive),
-      isTemplate: asBool(programRow.isTemplate),
-      name: programRow.name ?? '(unnamed)',
-    },
-    weeks: weekTree,
+    weeks: weeks.map((week) => ({id: week.id, routines: routinesByWeek.get(week.id) ?? []})),
   }
 }

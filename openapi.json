@@ -1,0 +1,4714 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "license": {
+      "identifier": "MIT",
+      "name": "MIT"
+    },
+    "title": "Cliftin API",
+    "version": "1.0.0"
+  },
+  "components": {
+    "schemas": {}
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Check database availability",
+        "tags": [
+          "system"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "operationId": "getOpenApiDocument",
+        "summary": "Get the generated OpenAPI document",
+        "tags": [
+          "system"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/programs": {
+      "get": {
+        "operationId": "listPrograms",
+        "summary": "List programs",
+        "tags": [
+          "programs"
+        ],
+        "description": "Returns non-deleted programs. Use q for a case-insensitive name substring, one explicit sort value, and an opaque cursor for pagination.",
+        "parameters": [
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "Opaque cursor returned by a previous page."
+          },
+          {
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "example": "strength",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Case-insensitive substring match on program name."
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "name"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "-name"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "dateAdded"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "-dateAdded"
+                  ]
+                }
+              ]
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Single sort field; prefix with - for descending order."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "dateAdded": {
+                            "anyOf": [
+                              {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "id": {
+                            "minimum": 1,
+                            "type": "integer",
+                            "example": 1
+                          },
+                          "isActive": {
+                            "type": "boolean"
+                          },
+                          "isDeleted": {
+                            "type": "boolean"
+                          },
+                          "isTemplate": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "dateAdded",
+                          "id",
+                          "isActive",
+                          "isDeleted",
+                          "isTemplate",
+                          "name"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/programs/active": {
+      "get": {
+        "operationId": "getActiveProgram",
+        "summary": "Get the active program",
+        "tags": [
+          "programs"
+        ],
+        "description": "Returns the program selected by Liftin, with legacy current-program fallback when no selection exists.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "dateAdded": {
+                      "anyOf": [
+                        {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "id": {
+                      "minimum": 1,
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "isDeleted": {
+                      "type": "boolean"
+                    },
+                    "isTemplate": {
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dateAdded",
+                    "id",
+                    "isActive",
+                    "isDeleted",
+                    "isTemplate",
+                    "name"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/programs/active/next-routine": {
+      "get": {
+        "operationId": "getActiveProgramNextRoutine",
+        "summary": "Get the active program next routine",
+        "tags": [
+          "programs"
+        ],
+        "description": "Returns the single up-next routine for the active program with normalized planned exercises and sets.",
+        "parameters": [
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "lb"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "kg"
+                  ]
+                }
+              ]
+            },
+            "example": "lb",
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "description": "Weight display unit. Defaults to lb where applicable."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "allOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "examples": [
+                            100
+                          ],
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "isDeleted": {
+                          "type": "boolean"
+                        },
+                        "isNext": {
+                          "type": "boolean"
+                        },
+                        "name": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "program": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "examples": [
+                                1
+                              ],
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "name": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name"
+                          ]
+                        },
+                        "week": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "examples": [
+                                10
+                              ],
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "number": {
+                              "examples": [
+                                1
+                              ],
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "number"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "isDeleted",
+                        "isNext",
+                        "name",
+                        "program",
+                        "week"
+                      ]
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "properties": {
+                        "exercises": {
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "exerciseId": {
+                                "anyOf": [
+                                  {
+                                    "description": "Exercise definition primary key.",
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "id": {
+                                "description": "Exercise configuration primary key.",
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "name": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "sets": {
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "anyOf": [
+                                        {
+                                          "minimum": 1,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "reps": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "rpe": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "timeSeconds": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "weight": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb where applicable.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "reps",
+                                    "rpe",
+                                    "timeSeconds",
+                                    "weight"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "exerciseId",
+                              "id",
+                              "name",
+                              "sets"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "exercises"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/programs/{programId}": {
+      "get": {
+        "operationId": "getProgram",
+        "summary": "Get program metadata",
+        "tags": [
+          "programs"
+        ],
+        "description": "Returns program metadata separately from its planned hierarchy. Direct lookup can return a soft-deleted program with isDeleted true.",
+        "parameters": [
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "example": 1,
+            "in": "path",
+            "name": "programId",
+            "required": true,
+            "description": "Program primary key."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "dateAdded": {
+                      "anyOf": [
+                        {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "id": {
+                      "minimum": 1,
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "isDeleted": {
+                      "type": "boolean"
+                    },
+                    "isTemplate": {
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dateAdded",
+                    "id",
+                    "isActive",
+                    "isDeleted",
+                    "isTemplate",
+                    "name"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/programs/{programId}/plan": {
+      "get": {
+        "operationId": "getProgramPlan",
+        "summary": "Get a program plan",
+        "tags": [
+          "programs"
+        ],
+        "description": "Returns a bounded normalized plan. Individual sets use their ordered child rows capped by configured set count; non-individual exercises synthesize default sets.",
+        "parameters": [
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "lb"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "kg"
+                  ]
+                }
+              ]
+            },
+            "example": "lb",
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "description": "Weight display unit. Defaults to lb where applicable."
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "example": 1,
+            "in": "path",
+            "name": "programId",
+            "required": true,
+            "description": "Program primary key."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "weeks": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "minimum": 1,
+                            "type": "integer"
+                          },
+                          "routines": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "properties": {
+                                "exercises": {
+                                  "type": "array",
+                                  "items": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "properties": {
+                                      "exerciseId": {
+                                        "anyOf": [
+                                          {
+                                            "description": "Exercise definition primary key.",
+                                            "minimum": 1,
+                                            "type": "integer"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "id": {
+                                        "description": "Exercise configuration primary key.",
+                                        "minimum": 1,
+                                        "type": "integer"
+                                      },
+                                      "name": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "sets": {
+                                        "type": "array",
+                                        "items": {
+                                          "additionalProperties": false,
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "anyOf": [
+                                                {
+                                                  "minimum": 1,
+                                                  "type": "integer"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            },
+                                            "reps": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            },
+                                            "rpe": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            },
+                                            "timeSeconds": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            },
+                                            "weight": {
+                                              "additionalProperties": false,
+                                              "type": "object",
+                                              "properties": {
+                                                "unit": {
+                                                  "description": "Weight display unit. Defaults to lb where applicable.",
+                                                  "anyOf": [
+                                                    {
+                                                      "type": "string",
+                                                      "enum": [
+                                                        "lb"
+                                                      ]
+                                                    },
+                                                    {
+                                                      "type": "string",
+                                                      "enum": [
+                                                        "kg"
+                                                      ]
+                                                    }
+                                                  ],
+                                                  "example": "lb"
+                                                },
+                                                "value": {
+                                                  "anyOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "null"
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "unit",
+                                                "value"
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "reps",
+                                            "rpe",
+                                            "timeSeconds",
+                                            "weight"
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "exerciseId",
+                                      "id",
+                                      "name",
+                                      "sets"
+                                    ]
+                                  }
+                                },
+                                "id": {
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "name": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "exercises",
+                                "id",
+                                "name"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "routines"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "weeks"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/routines": {
+      "get": {
+        "operationId": "listRoutines",
+        "summary": "List planned routines",
+        "tags": [
+          "routines"
+        ],
+        "description": "Returns non-deleted routines and supports q, programId, weekId, exerciseId, one explicit sort value, and opaque cursor pagination.",
+        "parameters": [
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "Opaque cursor returned by a previous page."
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "exerciseId",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "programId",
+            "required": false
+          },
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "example": "upper",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Case-insensitive substring match on routine name."
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "name"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "-name"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "weekId"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "-weekId"
+                  ]
+                }
+              ]
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Single sort field; prefix with - for descending order."
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "weekId",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "minimum": 1,
+                            "type": "integer",
+                            "example": 100
+                          },
+                          "isDeleted": {
+                            "type": "boolean"
+                          },
+                          "isNext": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "program": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "minimum": 1,
+                                "type": "integer",
+                                "example": 1
+                              },
+                              "name": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ]
+                          },
+                          "week": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "minimum": 1,
+                                "type": "integer",
+                                "example": 10
+                              },
+                              "number": {
+                                "minimum": 1,
+                                "type": "integer",
+                                "example": 1
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "number"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "isDeleted",
+                          "isNext",
+                          "name",
+                          "program",
+                          "week"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/routines/{routineId}": {
+      "get": {
+        "operationId": "getRoutine",
+        "summary": "Get planned routine detail",
+        "tags": [
+          "routines"
+        ],
+        "description": "Returns a routine with its normalized planned exercises and sets. Direct lookup can return a soft-deleted routine with isDeleted true.",
+        "parameters": [
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "lb"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "kg"
+                  ]
+                }
+              ]
+            },
+            "example": "lb",
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "description": "Weight display unit. Defaults to lb where applicable."
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "example": 100,
+            "in": "path",
+            "name": "routineId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "allOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "examples": [
+                            100
+                          ],
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "isDeleted": {
+                          "type": "boolean"
+                        },
+                        "isNext": {
+                          "type": "boolean"
+                        },
+                        "name": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "program": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "examples": [
+                                1
+                              ],
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "name": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name"
+                          ]
+                        },
+                        "week": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "examples": [
+                                10
+                              ],
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "number": {
+                              "examples": [
+                                1
+                              ],
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "number"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "isDeleted",
+                        "isNext",
+                        "name",
+                        "program",
+                        "week"
+                      ]
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "properties": {
+                        "exercises": {
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "exerciseId": {
+                                "anyOf": [
+                                  {
+                                    "description": "Exercise definition primary key.",
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "id": {
+                                "description": "Exercise configuration primary key.",
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "name": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "sets": {
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "anyOf": [
+                                        {
+                                          "minimum": 1,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "reps": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "rpe": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "timeSeconds": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "weight": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb where applicable.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "reps",
+                                    "rpe",
+                                    "timeSeconds",
+                                    "weight"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "exerciseId",
+                              "id",
+                              "name",
+                              "sets"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "exercises"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/workouts": {
+      "get": {
+        "operationId": "listWorkouts",
+        "summary": "List completed workouts",
+        "tags": [
+          "workouts"
+        ],
+        "description": "Returns workouts in deterministic startedAt/id order. Date filters are inclusive calendar dates in the server TZ; returned timestamps are UTC.",
+        "parameters": [
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false
+          },
+          {
+            "schema": {
+              "format": "date",
+              "type": "string"
+            },
+            "example": "2026-07-01",
+            "in": "query",
+            "name": "from",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "programId",
+            "required": false,
+            "description": "Program primary key."
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "routineId",
+            "required": false,
+            "description": "Routine primary key."
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "startedAt"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "-startedAt"
+                  ]
+                }
+              ]
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Single sort field; - means descending. Defaults to -startedAt."
+          },
+          {
+            "schema": {
+              "format": "date",
+              "type": "string"
+            },
+            "example": "2026-07-31",
+            "in": "query",
+            "name": "to",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "durationSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "id": {
+                            "minimum": 1,
+                            "type": "integer",
+                            "example": 4001
+                          },
+                          "program": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "routine": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "startedAt": {
+                            "anyOf": [
+                              {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "durationSeconds",
+                          "id",
+                          "program",
+                          "routine",
+                          "startedAt"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/workouts/latest": {
+      "get": {
+        "operationId": "getLatestWorkout",
+        "summary": "Get the latest completed workout",
+        "tags": [
+          "workouts"
+        ],
+        "description": "Returns the newest completed workout using the same detail shape as direct workout lookup.",
+        "parameters": [
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "lb"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "kg"
+                  ]
+                }
+              ]
+            },
+            "example": "lb",
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "description": "Weight display unit. Defaults to lb."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "durationSeconds": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "id": {
+                      "minimum": 1,
+                      "type": "integer",
+                      "example": 4001
+                    },
+                    "program": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "name": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "routine": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "name": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "startedAt": {
+                      "anyOf": [
+                        {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "exercises": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "exerciseId": {
+                            "anyOf": [
+                              {
+                                "description": "Exercise-definition primary key.",
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "id": {
+                            "description": "Performed exercise-result primary key.",
+                            "minimum": 1,
+                            "type": "integer"
+                          },
+                          "name": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "sets": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "isWarmup": {
+                                  "description": "Always present, including when false.",
+                                  "type": "boolean"
+                                },
+                                "reps": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "rpe": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "timeSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "volume": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "unit": {
+                                      "description": "Weight display unit. Defaults to lb.",
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "lb"
+                                          ]
+                                        },
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "kg"
+                                          ]
+                                        }
+                                      ],
+                                      "example": "lb"
+                                    },
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "unit",
+                                    "value"
+                                  ]
+                                },
+                                "weight": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "unit": {
+                                      "description": "Weight display unit. Defaults to lb.",
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "lb"
+                                          ]
+                                        },
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "kg"
+                                          ]
+                                        }
+                                      ],
+                                      "example": "lb"
+                                    },
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "unit",
+                                    "value"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "isWarmup",
+                                "reps",
+                                "rpe",
+                                "timeSeconds",
+                                "volume",
+                                "weight"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "exerciseId",
+                          "id",
+                          "name",
+                          "sets"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "durationSeconds",
+                    "id",
+                    "program",
+                    "routine",
+                    "startedAt",
+                    "exercises"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/workouts/{workoutId}": {
+      "get": {
+        "operationId": "getWorkout",
+        "summary": "Get completed workout detail",
+        "tags": [
+          "workouts"
+        ],
+        "description": "Includes performed exercises and all recorded sets, including warmups.",
+        "parameters": [
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "lb"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "kg"
+                  ]
+                }
+              ]
+            },
+            "example": "lb",
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "description": "Weight display unit. Defaults to lb."
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "example": 4001,
+            "in": "path",
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "durationSeconds": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "id": {
+                      "minimum": 1,
+                      "type": "integer",
+                      "example": 4001
+                    },
+                    "program": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "name": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "routine": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "name": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "startedAt": {
+                      "anyOf": [
+                        {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "exercises": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "exerciseId": {
+                            "anyOf": [
+                              {
+                                "description": "Exercise-definition primary key.",
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "id": {
+                            "description": "Performed exercise-result primary key.",
+                            "minimum": 1,
+                            "type": "integer"
+                          },
+                          "name": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "sets": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "isWarmup": {
+                                  "description": "Always present, including when false.",
+                                  "type": "boolean"
+                                },
+                                "reps": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "rpe": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "timeSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "volume": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "unit": {
+                                      "description": "Weight display unit. Defaults to lb.",
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "lb"
+                                          ]
+                                        },
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "kg"
+                                          ]
+                                        }
+                                      ],
+                                      "example": "lb"
+                                    },
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "unit",
+                                    "value"
+                                  ]
+                                },
+                                "weight": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "unit": {
+                                      "description": "Weight display unit. Defaults to lb.",
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "lb"
+                                          ]
+                                        },
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "kg"
+                                          ]
+                                        }
+                                      ],
+                                      "example": "lb"
+                                    },
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "unit",
+                                    "value"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "isWarmup",
+                                "reps",
+                                "rpe",
+                                "timeSeconds",
+                                "volume",
+                                "weight"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "exerciseId",
+                          "id",
+                          "name",
+                          "sets"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "durationSeconds",
+                    "id",
+                    "program",
+                    "routine",
+                    "startedAt",
+                    "exercises"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/workouts/{workoutId}/routine": {
+      "get": {
+        "operationId": "getWorkoutRoutine",
+        "summary": "Get a workout routine reference",
+        "tags": [
+          "workouts"
+        ],
+        "description": "Returns the planned routine linked to this completed workout.",
+        "parameters": [
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "example": 4001,
+            "in": "path",
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/exercises": {
+      "get": {
+        "operationId": "listExercises",
+        "summary": "List exercise metadata",
+        "tags": [
+          "exercises"
+        ],
+        "description": "Returns non-deleted exercise definitions. Performance statistics are exposed separately. Use an opaque cursor for pagination.",
+        "parameters": [
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "Opaque cursor returned by a previous page."
+          },
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "query",
+            "name": "equipmentId",
+            "required": false,
+            "description": "Liftin equipment identifier."
+          },
+          {
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "query",
+            "name": "muscle",
+            "required": false
+          },
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "example": "bench press",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Case- and separator-insensitive search over stored, derived, and alternative English names."
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "name"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "-name"
+                  ]
+                }
+              ]
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Single sort field; - means descending."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "alternativeEnglishNames": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "defaultProgressMetric": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "equipment": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "equipmentId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "id": {
+                            "minimum": 1,
+                            "type": "integer",
+                            "example": 1000
+                          },
+                          "isDeleted": {
+                            "type": "boolean"
+                          },
+                          "isUserCreated": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "perceptionScale": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "primaryMuscles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "secondaryMuscles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "supports1RM": {
+                            "type": "boolean"
+                          },
+                          "timerBased": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "alternativeEnglishNames",
+                          "defaultProgressMetric",
+                          "equipment",
+                          "equipmentId",
+                          "id",
+                          "isDeleted",
+                          "isUserCreated",
+                          "name",
+                          "perceptionScale",
+                          "primaryMuscles",
+                          "secondaryMuscles",
+                          "supports1RM",
+                          "timerBased"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/exercises/{exerciseId}": {
+      "get": {
+        "operationId": "getExercise",
+        "summary": "Get exercise metadata",
+        "tags": [
+          "exercises"
+        ],
+        "description": "Direct lookup can return a soft-deleted exercise with isDeleted true. Statistics and performances remain separate.",
+        "parameters": [
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "example": 1000,
+            "in": "path",
+            "name": "exerciseId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "alternativeEnglishNames": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "defaultProgressMetric": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "equipment": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "equipmentId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "id": {
+                      "minimum": 1,
+                      "type": "integer",
+                      "example": 1000
+                    },
+                    "isDeleted": {
+                      "type": "boolean"
+                    },
+                    "isUserCreated": {
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "perceptionScale": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "primaryMuscles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "secondaryMuscles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "supports1RM": {
+                      "type": "boolean"
+                    },
+                    "timerBased": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "alternativeEnglishNames",
+                    "defaultProgressMetric",
+                    "equipment",
+                    "equipmentId",
+                    "id",
+                    "isDeleted",
+                    "isUserCreated",
+                    "name",
+                    "perceptionScale",
+                    "primaryMuscles",
+                    "secondaryMuscles",
+                    "supports1RM",
+                    "timerBased"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/exercises/{exerciseId}/statistics": {
+      "get": {
+        "operationId": "getExerciseStatistics",
+        "summary": "Get exercise aggregate statistics",
+        "tags": [
+          "exercises"
+        ],
+        "description": "Warmup sets are excluded from all aggregate values.",
+        "parameters": [
+          {
+            "schema": {
+              "format": "date",
+              "type": "string"
+            },
+            "in": "query",
+            "name": "from",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "in": "query",
+            "name": "maxReps",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "in": "query",
+            "name": "maxWeight",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "in": "query",
+            "name": "minReps",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "in": "query",
+            "name": "minWeight",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "programId",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "routineId",
+            "required": false
+          },
+          {
+            "schema": {
+              "format": "date",
+              "type": "string"
+            },
+            "in": "query",
+            "name": "to",
+            "required": false
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "lb"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "kg"
+                  ]
+                }
+              ]
+            },
+            "example": "lb",
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "description": "Weight display unit. Defaults to lb."
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "example": 1000,
+            "in": "path",
+            "name": "exerciseId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "lastPerformedAt": {
+                      "anyOf": [
+                        {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "performanceCount": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "setCount": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "topReps": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "topWeight": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "properties": {
+                        "unit": {
+                          "description": "Weight display unit. Defaults to lb.",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "lb"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "kg"
+                              ]
+                            }
+                          ],
+                          "example": "lb"
+                        },
+                        "value": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "unit",
+                        "value"
+                      ]
+                    },
+                    "totalReps": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "volume": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "properties": {
+                        "unit": {
+                          "description": "Weight display unit. Defaults to lb.",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "lb"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "kg"
+                              ]
+                            }
+                          ],
+                          "example": "lb"
+                        },
+                        "value": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "unit",
+                        "value"
+                      ]
+                    },
+                    "workoutCount": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "lastPerformedAt",
+                    "performanceCount",
+                    "setCount",
+                    "topReps",
+                    "topWeight",
+                    "totalReps",
+                    "volume",
+                    "workoutCount"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/exercises/{exerciseId}/performances": {
+      "get": {
+        "operationId": "listExercisePerformances",
+        "summary": "List exercise performances",
+        "tags": [
+          "exercises"
+        ],
+        "description": "Returns set-level performances in deterministic startedAt/id order. Warmups remain in set details but are excluded from statistics.",
+        "parameters": [
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false
+          },
+          {
+            "schema": {
+              "format": "date",
+              "type": "string"
+            },
+            "in": "query",
+            "name": "from",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "in": "query",
+            "name": "maxReps",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "in": "query",
+            "name": "maxWeight",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "in": "query",
+            "name": "minReps",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "in": "query",
+            "name": "minWeight",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "programId",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "routineId",
+            "required": false
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "startedAt"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "-startedAt"
+                  ]
+                }
+              ]
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Single sort field; - means descending. Defaults to -startedAt."
+          },
+          {
+            "schema": {
+              "format": "date",
+              "type": "string"
+            },
+            "in": "query",
+            "name": "to",
+            "required": false
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "lb"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "kg"
+                  ]
+                }
+              ]
+            },
+            "example": "lb",
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "description": "Weight display unit. Defaults to lb."
+          },
+          {
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "example": 1000,
+            "in": "path",
+            "name": "exerciseId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "exerciseId": {
+                            "description": "Exercise-definition primary key.",
+                            "minimum": 1,
+                            "type": "integer"
+                          },
+                          "id": {
+                            "description": "Performed exercise-result primary key.",
+                            "minimum": 1,
+                            "type": "integer"
+                          },
+                          "program": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "routine": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "sets": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "isWarmup": {
+                                  "type": "boolean"
+                                },
+                                "reps": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "rpe": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "timeSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "volume": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "unit": {
+                                      "description": "Weight display unit. Defaults to lb.",
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "lb"
+                                          ]
+                                        },
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "kg"
+                                          ]
+                                        }
+                                      ],
+                                      "example": "lb"
+                                    },
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "unit",
+                                    "value"
+                                  ]
+                                },
+                                "weight": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "unit": {
+                                      "description": "Weight display unit. Defaults to lb.",
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "lb"
+                                          ]
+                                        },
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "kg"
+                                          ]
+                                        }
+                                      ],
+                                      "example": "lb"
+                                    },
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "unit",
+                                    "value"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "isWarmup",
+                                "reps",
+                                "rpe",
+                                "timeSeconds",
+                                "volume",
+                                "weight"
+                              ]
+                            }
+                          },
+                          "startedAt": {
+                            "anyOf": [
+                              {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "statistics": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "setCount": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "topReps": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "topWeight": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "unit": {
+                                    "description": "Weight display unit. Defaults to lb.",
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "lb"
+                                        ]
+                                      },
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "kg"
+                                        ]
+                                      }
+                                    ],
+                                    "example": "lb"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "unit",
+                                  "value"
+                                ]
+                              },
+                              "totalReps": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "volume": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "unit": {
+                                    "description": "Weight display unit. Defaults to lb.",
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "lb"
+                                        ]
+                                      },
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "kg"
+                                        ]
+                                      }
+                                    ],
+                                    "example": "lb"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "unit",
+                                  "value"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "setCount",
+                              "topReps",
+                              "topWeight",
+                              "totalReps",
+                              "volume"
+                            ]
+                          },
+                          "workoutId": {
+                            "minimum": 1,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "exerciseId",
+                          "id",
+                          "program",
+                          "routine",
+                          "sets",
+                          "startedAt",
+                          "statistics",
+                          "workoutId"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "path"
+                        ]
+                      }
+                    },
+                    "message": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "status": {
+                      "maximum": 599,
+                      "minimum": 400,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": []
+}

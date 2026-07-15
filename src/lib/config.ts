@@ -4,17 +4,19 @@ import {resolve} from 'node:path'
 
 let loaded = false
 
-function loadEnv(): void {
+export function loadEnv(): void {
   if (loaded) return
   dotenv.config({path: resolve(process.cwd(), '.env.local'), quiet: true})
   loaded = true
 }
 
-export function getDbPath(): string {
+export function getDbPath(env: NodeJS.ProcessEnv = process.env): string {
   loadEnv()
 
-  const defaultPath = `${process.env.HOME}/Library/Containers/com.nstrm.Bello/Data/Library/Application Support/Liftin/BelloDataModel.sqlite`
-  const path = process.env.LIFTIN_DB_PATH ?? defaultPath
+  const path = env.LIFTIN_DB_PATH
+  if (!path) {
+    throw new Error('LIFTIN_DB_PATH is required')
+  }
 
   try {
     accessSync(path, constants.R_OK)

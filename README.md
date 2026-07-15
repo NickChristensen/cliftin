@@ -1,337 +1,87 @@
-cliftin
-=================
+# Cliftin API
 
-CLIftin: A read-only CLI for Liftin'
+Cliftin is a read-only HTTP API for a live [Liftin](https://www.liftin.app/) SQLite database. It exposes program planning, routines, workouts, exercise history, and generated OpenAPI documentation.
 
+The API has no authentication and does not enable CORS. The supplied Compose configuration publishes it only on loopback, so it is intended for the host machine and trusted local clients.
 
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/@nickchristensen/cliftin.svg)](https://npmjs.org/package/@nickchristensen/cliftin)
-[![Downloads/week](https://img.shields.io/npm/dw/@nickchristensen/cliftin.svg)](https://npmjs.org/package/@nickchristensen/cliftin)
+## API v1
 
+The server listens on port `3000` inside the container.
 
-<!-- toc -->
-* [Configuration](#configuration)
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
+- [`GET /openapi.json`](http://127.0.0.1:3000/openapi.json) returns the authoritative OpenAPI 3.1 document.
+- [`GET /health`](http://127.0.0.1:3000/health) checks that the live database can be queried.
+- API resources are under `/v1` and use numeric identifiers only.
 
-# Configuration
+Collections return `{ "items": [...] }`. Soft-deleted records are hidden from collections but can be returned by a direct numeric lookup with `isDeleted: true`.
 
-cliftin reads your Liftin database directly. By default it looks for the Liftin app's SQLite file at:
+Weight fields default to pounds. Endpoints with planned or performed weight data accept `?unit=kg` to opt into kilograms. Liftin-compatible conversion uses exactly `2.2` and returns values rounded to two decimal places.
 
-```
-$HOME/Library/Containers/com.nstrm.Bello/Data/Library/Application Support/Liftin/BelloDataModel.sqlite
-```
+## Docker Compose
 
-To use a different path, set `LIFTIN_DB_PATH` in your environment or in a `.env.local` file at the project root:
+The Compose service mounts Liftin's containing directory—not only the main database file—read-only at `/liftin`. This keeps the SQLite WAL and SHM sidecar files available to the process.
 
 ```sh
-LIFTIN_DB_PATH=/path/to/BelloDataModel.sqlite
+export TZ=America/Chicago
+export LIFTIN_DIR="$HOME/Library/Containers/com.nstrm.Bello/Data/Library/Application Support/Liftin"
+docker compose up --build
 ```
 
-# Usage
-```sh-session
-$ npm install -g @nickchristensen/cliftin
-$ cliftin COMMAND
-running command...
-$ cliftin --help [COMMAND]
-USAGE
-  $ cliftin COMMAND
-...
-```
-# Commands
-<!-- commands -->
-* [`cliftin exercises list`](#cliftin-exercises-list)
-* [`cliftin exercises show SELECTOR`](#cliftin-exercises-show-selector)
-* [`cliftin help [COMMAND]`](#cliftin-help-command)
-* [`cliftin programs list`](#cliftin-programs-list)
-* [`cliftin programs show [SELECTOR]`](#cliftin-programs-show-selector)
-* [`cliftin routines from-workout [WORKOUTID]`](#cliftin-routines-from-workout-workoutid)
-* [`cliftin routines latest`](#cliftin-routines-latest)
-* [`cliftin routines list`](#cliftin-routines-list)
-* [`cliftin routines next`](#cliftin-routines-next)
-* [`cliftin routines show SELECTOR`](#cliftin-routines-show-selector)
-* [`cliftin workouts list`](#cliftin-workouts-list)
-* [`cliftin workouts next`](#cliftin-workouts-next)
-* [`cliftin workouts show [WORKOUTID]`](#cliftin-workouts-show-workoutid)
+Then query the locally bound service:
 
-## `cliftin exercises list`
-
-List exercises
-
-```
-USAGE
-  $ cliftin exercises list [--json] [--equipment <value>] [--muscle <value>] [--name <value>] [--sort
-    name|lastPerformed|timesPerformed]
-
-FLAGS
-  --equipment=<value>  Filter by equipment name
-  --muscle=<value>     Filter by muscle group
-  --name=<value>       Filter by name contains
-  --sort=<option>      [default: name]
-                       <options: name|lastPerformed|timesPerformed>
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  List exercises
+```sh
+curl http://127.0.0.1:3000/health
+curl http://127.0.0.1:3000/openapi.json
+curl 'http://127.0.0.1:3000/v1/workouts?limit=10'
+curl 'http://127.0.0.1:3000/v1/programs/active/next-routine?unit=kg'
 ```
 
-_See code: [src/commands/exercises/list.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/exercises/list.ts)_
+`TZ` is required and must be supplied by the host. `PORT` changes only the loopback host port; the container always listens on `3000`.
 
-## `cliftin exercises show SELECTOR`
+The service runs as a non-root user with a read-only container filesystem. It has read-only access to the database directory and does not modify Liftin data.
 
-Show one exercise detail and history
+Do **not** open the database with SQLite immutable mode (for example, `immutable=1`). Immutable mode can ignore WAL state and return stale data. Keep the entire Liftin directory mounted so `BelloDataModel.sqlite`, `BelloDataModel.sqlite-wal`, and `BelloDataModel.sqlite-shm` are visible together.
 
-```
-USAGE
-  $ cliftin exercises show SELECTOR [--json] [--all | --limit <value>] [--from <value>] [--max-reps <value>]
-    [--max-weight <value>] [--min-reps <value>] [--min-weight <value>] [--no-warmup] [--program <value>] [--routine
-    <value>] [--to <value>]
+## Local development
 
-ARGUMENTS
-  SELECTOR  exercise id or name
+For development without Docker, point the server at the same live database and provide a timezone:
 
-FLAGS
-  --all                 Return all matching history rows (no limit)
-  --from=<value>        History start date YYYY-MM-DD
-  --limit=<value>       History row limit (default: 100)
-  --max-reps=<value>    History max top reps
-  --max-weight=<value>  History max top weight
-  --min-reps=<value>    History min top reps
-  --min-weight=<value>  History min top weight
-  --no-warmup           Hide warmup sets from output
-  --program=<value>     History filter by program id or name
-  --routine=<value>     History filter by routine id or name
-  --to=<value>          History end date YYYY-MM-DD
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Show one exercise detail and history
+```sh
+export TZ=America/Chicago
+export LIFTIN_DB_PATH="$HOME/Library/Containers/com.nstrm.Bello/Data/Library/Application Support/Liftin/BelloDataModel.sqlite"
+npm ci
+npm run build
+npm start
 ```
 
-_See code: [src/commands/exercises/show.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/exercises/show.ts)_
+## Route inventory
 
-## `cliftin help [COMMAND]`
+System:
 
-Display help for cliftin.
+- `GET /health`
+- `GET /openapi.json`
 
-```
-USAGE
-  $ cliftin help [COMMAND...] [-n]
+Programs and routines:
 
-ARGUMENTS
-  [COMMAND...]  Command to show help for.
+- `GET /v1/programs`
+- `GET /v1/programs/active`
+- `GET /v1/programs/:programId`
+- `GET /v1/programs/:programId/plan`
+- `GET /v1/programs/active/next-routine`
+- `GET /v1/routines`
+- `GET /v1/routines/:routineId`
 
-FLAGS
-  -n, --nested-commands  Include all nested commands in the output.
+Workouts:
 
-DESCRIPTION
-  Display help for cliftin.
-```
+- `GET /v1/workouts`
+- `GET /v1/workouts/latest`
+- `GET /v1/workouts/:workoutId`
+- `GET /v1/workouts/:workoutId/routine`
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.37/src/commands/help.ts)_
+Exercises:
 
-## `cliftin programs list`
+- `GET /v1/exercises`
+- `GET /v1/exercises/:exerciseId`
+- `GET /v1/exercises/:exerciseId/statistics`
+- `GET /v1/exercises/:exerciseId/performances`
 
-List programs
-
-```
-USAGE
-  $ cliftin programs list [--json]
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  List programs
-```
-
-_See code: [src/commands/programs/list.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/programs/list.ts)_
-
-## `cliftin programs show [SELECTOR]`
-
-Show one program hierarchy
-
-```
-USAGE
-  $ cliftin programs show [SELECTOR] [--json]
-
-ARGUMENTS
-  [SELECTOR]  program id or name (default: active program)
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Show one program hierarchy
-```
-
-_See code: [src/commands/programs/show.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/programs/show.ts)_
-
-## `cliftin routines from-workout [WORKOUTID]`
-
-Show the planned routine for a completed workout
-
-```
-USAGE
-  $ cliftin routines from-workout [WORKOUTID] [--json]
-
-ARGUMENTS
-  [WORKOUTID]  workout id (default: latest workout)
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Show the planned routine for a completed workout
-```
-
-_See code: [src/commands/routines/from-workout.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/routines/from-workout.ts)_
-
-## `cliftin routines latest`
-
-Show the planned routine for the latest workout
-
-```
-USAGE
-  $ cliftin routines latest [--json]
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Show the planned routine for the latest workout
-```
-
-_See code: [src/commands/routines/latest.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/routines/latest.ts)_
-
-## `cliftin routines list`
-
-List planned routines
-
-```
-USAGE
-  $ cliftin routines list [--json] [--name <value>] [--program <value>] [--week <value>]
-
-FLAGS
-  --name=<value>     Filter by routine name contains
-  --program=<value>  Filter by program id or name
-  --week=<value>     Filter by week number
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  List planned routines
-```
-
-_See code: [src/commands/routines/list.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/routines/list.ts)_
-
-## `cliftin routines next`
-
-Show the up-next routine from the active program
-
-```
-USAGE
-  $ cliftin routines next [--json]
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Show the up-next routine from the active program
-```
-
-_See code: [src/commands/routines/next.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/routines/next.ts)_
-
-## `cliftin routines show SELECTOR`
-
-Show one planned routine
-
-```
-USAGE
-  $ cliftin routines show SELECTOR [--json]
-
-ARGUMENTS
-  SELECTOR  routine id or name
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Show one planned routine
-```
-
-_See code: [src/commands/routines/show.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/routines/show.ts)_
-
-## `cliftin workouts list`
-
-List workouts
-
-```
-USAGE
-  $ cliftin workouts list [--json] [--limit <value> | --all] [--on <value> | --from <value> | --to <value>]
-    [--program <value>] [--routine <value>]
-
-FLAGS
-  --all              Return all matching workouts (no limit)
-  --from=<value>     Start date YYYY-MM-DD
-  --limit=<value>    Limit workouts (default: 25)
-  --on=<value>       Single date YYYY-MM-DD
-  --program=<value>  Filter by program id or name
-  --routine=<value>  Filter by routine id or name
-  --to=<value>       End date YYYY-MM-DD
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  List workouts
-```
-
-_See code: [src/commands/workouts/list.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/workouts/list.ts)_
-
-## `cliftin workouts next`
-
-Redirect to routines next
-
-```
-USAGE
-  $ cliftin workouts next [--json]
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Redirect to routines next
-```
-
-_See code: [src/commands/workouts/next.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/workouts/next.ts)_
-
-## `cliftin workouts show [WORKOUTID]`
-
-Show one workout with exercises and sets
-
-```
-USAGE
-  $ cliftin workouts show [WORKOUTID] [--json] [--no-warmup]
-
-ARGUMENTS
-  [WORKOUTID]  workout id (default: latest workout)
-
-FLAGS
-  --no-warmup  Hide warmup sets from output
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Show one workout with exercises and sets
-```
-
-_See code: [src/commands/workouts/show.ts](https://github.com/nickchristensen/cliftin/blob/v4.1.0/src/commands/workouts/show.ts)_
-<!-- commandsstop -->
+See `/openapi.json` for complete query parameters, response schemas, examples, and error codes.

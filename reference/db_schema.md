@@ -19,6 +19,7 @@ erDiagram
   ZEXERCISECONFIGURATION ||--o{ Z_12ROUTINES : "join rows"
   ZEXERCISECONFIGURATION ||--o{ ZSETCONFIGURATION : "ZSETCONFIGURATION.ZEXERCISECONFIGURATION"
   ZWORKOUTRESULT ||--o{ ZEXERCISERESULT : "ZEXERCISERESULT.ZWORKOUT"
+  ZEXERCISEINFORMATION ||--o{ ZEXERCISERESULT : "exercise definition"
   ZEXERCISERESULT ||--o{ ZGYMSETRESULT : "ZGYMSETRESULT.ZEXERCISE"
   ZEXERCISEINFORMATION ||--o{ ZEXERCISECONFIGURATION : "exercise definition"
 ```
@@ -60,15 +61,15 @@ ZWORKOUTPLAN (Program)
 - Some routines are linked to programs only through `ZROUTINE.ZPERIOD -> ZPERIOD.ZWORKOUTPLAN`.
   Do not assume `ZROUTINE.ZWORKOUTPLAN` is always populated.
 - Planned RPE uses sentinel semantics:
-  `16` is effectively the default/unspecified value and is best normalized to `null` in CLI output.
+  `16` is effectively the default/unspecified value and is normalized to `null` in API output.
 - `ZEXERCISECONFIGURATION.ZUSEINDIVIDUALSETS` controls planned-set source of truth:
   when it is `1`, use related `ZSETCONFIGURATION` rows ordered by `ZSETINDEX`, but cap the result to the positive `ZSETS` count. Do not synthesize missing child rows when fewer remain after edits. Otherwise, ignore any child rows and synthesize the planned sets from `ZSETS`, `ZREPS`, `ZWEIGHT`, and `ZTIME`.
 - Weight storage and display units differ:
-  planned and logged weight values appear to be stored in kg even when user preference is imperial.
-  Resolve display unit from `ZSETTINGS.ZMEASURMENTUNIT` (fallback to equipment unit metadata) and convert for output as needed.
+  planned and logged weight values are stored in kg even when the Liftin setting is imperial.
+  The HTTP API defaults to lb and supports a `unit=kg` override; its intentionally Liftin-specific conversion is `kg * 2.2`.
 - Date/timestamp fields use Apple/Core Data epoch seconds (offset from Unix epoch), not Unix seconds directly.
   Convert before comparing/formatting.
-- `ZID` fields are often BLOB identifiers (not human-readable strings). For CLI UX, use numeric `Z_PK` as primary selector.
+- `ZID` fields are often BLOB identifiers (not human-readable strings). Use numeric `Z_PK` as the HTTP resource identifier.
 - `ZGYMSETRESULT.ZWARMUPSET` (integer): flags whether a set was performed as a warm-up.
   `0` = working set, `1` = warm-up set.
   In a typical dataset this column is approximately 3000 warm-up sets out of ~8000 total sets (~37%).

@@ -32,6 +32,7 @@ insert into ZWORKOUTPROGRAMSINFO values (1, null, X'AA11');
 insert into ZPERIOD values (10, 1, 100);
 insert into ZROUTINE values (100, 'Day A', 0, 0, 10, null, 100);
 insert into ZROUTINE values (101, 'Day B', 0, 1, 10, null, 200);
+insert into ZROUTINE values (102, 'Deleted Day', 1, 0, 10, null, 300);
 insert into ZEQUIPMENT2 values (1, 'settings:equipment:equipment_default_name', 'smithMachine', null);
 insert into ZEQUIPMENT2 values (2, 'Straight Curl Bar', 'BBB6E07D-B75F-459D-9FF8-4A97AD6AE665', null);
 insert into ZSETTINGS values ('imperial');
@@ -68,6 +69,8 @@ insert into ZGYMSETRESULT values (6003, 5002, 200, 5, 80, 400, null, null, 1);
 insert into ZGYMSETRESULT values (6004, 5002, 100, 5, 82.5, 412.5, null, null, 0);
 insert into ZGYMSETRESULT values (6002, 5001, 100, 6, 105, 630, null, null, 0);
 insert into ZGYMSETRESULT values (6005, 5004, 100, 10, 90, 900, null, null, 0);
+alter table ZEXERCISEINFORMATION add column ZALTERNATIVEENGLISHNAMES text;
+update ZEXERCISEINFORMATION set ZALTERNATIVEENGLISHNAMES = 'barbell_squat' where Z_PK = 1000;
   `)
 
   db.close()

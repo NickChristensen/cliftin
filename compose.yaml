@@ -1,0 +1,15 @@
+services:
+  cliftin:
+    build:
+      context: .
+    environment:
+      LIFTIN_DB_PATH: /liftin/BelloDataModel.sqlite
+      TZ: "${TZ:?Set TZ to an IANA timezone such as America/Chicago}"
+    ports:
+      - "127.0.0.1:${PORT:-3000}:3000"
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
+    read_only: true
+    restart: unless-stopped
+    volumes:
+      - "${LIFTIN_DIR:?Set LIFTIN_DIR to the directory containing BelloDataModel.sqlite}:/liftin:ro"

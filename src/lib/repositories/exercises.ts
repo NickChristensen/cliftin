@@ -1,51 +1,84 @@
 import {Kysely, sql} from 'kysely'
 
 import {DatabaseSchema} from '../db.js'
-import {formatEquipmentDisplayName, formatExerciseDisplayName, formatMuscleLabel} from '../names.js'
-import {appleSecondsToIso, dateRangeToAppleSeconds} from '../time.js'
-import {
-  ExerciseDetail,
-  ExerciseHistoryRow,
-  ExerciseHistoryWithSetsRow,
-  ExerciseSummary,
-  WorkoutDetail,
-  WorkoutExerciseDetail,
-} from '../types.js'
-import {
-  convertDisplayWeightToKg,
-  convertKgToDisplayVolume,
-  convertKgToDisplayWeight,
-  resolveExerciseWeightUnit,
-} from '../units.js'
-import {resolveIdOrName} from './selectors.js'
-import {getWorkoutDetail} from './workouts.js'
-
-export type ExerciseListFilters = {
-  equipment?: string
-  muscle?: string
-  name?: string
-  sort?: 'lastPerformed' | 'name' | 'timesPerformed'
+import {formatEquipmentDisplayName, formatMuscleLabel} from '../names.js'
+import {normalizeRpe} from '../rpe.js'
+import {dateRangeToAppleSeconds} from '../time.js'
+export type ApiExerciseMetadataRow = {
+  alternativeEnglishNames: string[]
+  defaultProgressMetric: null | string
+  equipment: null | string
+  equipmentId: null | string
+  id: number
+  isDeleted: boolean
+  isUserCreated: boolean
+  name: null | string
+  perceptionScale: null | string
+  primaryMuscles: string[]
+  secondaryMuscles: string[]
+  supports1RM: boolean
+  timerBased: boolean
 }
 
-export type ExerciseHistoryFilters = {
+export type ApiExerciseMetadataFilters = {
+  equipmentId?: string
+  muscle?: string
+  q?: string
+}
+
+export type ApiExercisePerformanceFilters = {
   from?: string
-  limit?: number
   maxReps?: number
-  maxWeight?: number
+  maxWeightKg?: number
   minReps?: number
-  minWeight?: number
-  program?: string
-  routine?: string
+  minWeightKg?: number
+  programId?: number
+  routineId?: number
   to?: string
 }
 
-export type ExerciseLastPerformedSnapshot = {
-  exercise: WorkoutExerciseDetail
-  workout: WorkoutDetail
+export type ApiExercisePerformanceSetRow = {
+  id: number
+  isWarmup: boolean
+  reps: null | number
+  rpe: null | number
+  timeSeconds: null | number
+  volumeKg: null | number
+  weightKg: null | number
+}
+
+export type ApiExercisePerformanceRow = {
+  id: number
+  programId: null | number
+  programName: null | string
+  routineId: null | number
+  routineName: null | string
+  sets: ApiExercisePerformanceSetRow[]
+  startDate: null | number
+  statistics: {
+    setCount: number
+    topReps: null | number
+    topWeightKg: null | number
+    totalReps: number
+    volumeKg: number
+  }
+  workoutId: number
 }
 
 function asBool(value: null | number): boolean {
   return value === 1
+}
+
+function splitLabels(value: null | string, separator: ',' | ';'): string[] {
+  if (!value) return []
+  return value
+    .split(separator)
+    .map((part) => part.trim())
+    .filter(Boolean)
+}
+
+function muscleLabels(value: null | string): string[] {
+  return splitLabels(value, ',').map((muscle) => formatMuscleLabel(muscle) ?? muscle)
 }
 
 const workingSetCountExpr = sql<number>`sum(case when gs.Z_PK is not null and coalesce(gs.ZWARMUPSET, 0) != 1 then 1 else 0 end)`
@@ -53,320 +86,150 @@ const workingSetTotalRepsExpr = sql<number>`coalesce(sum(case when coalesce(gs.Z
 const workingSetTopRepsExpr = sql<null | number>`max(case when coalesce(gs.ZWARMUPSET, 0) != 1 then gs.ZREPS end)`
 const workingSetTopWeightExpr = sql<null | number>`max(case when coalesce(gs.ZWARMUPSET, 0) != 1 then gs.ZWEIGHT end)`
 const workingSetVolumeExpr = sql<number>`coalesce(sum(case when coalesce(gs.ZWARMUPSET, 0) != 1 then gs.ZVOLUME else 0 end), 0)`
-
-type ExerciseSelectorRow = {
-  id: number
-  isUserCreated: null | number
-  name: null | string
-}
-
-function renderSelectorCandidateList(candidates: ExerciseSelectorRow[]): string {
-  return candidates
-    .map((candidate) => ({
-      id: candidate.id,
-      name: formatExerciseDisplayName(candidate.name, asBool(candidate.isUserCreated)),
-    }))
-    .map((candidate) => `${candidate.id}:${candidate.name}`)
-    .join(', ')
-}
-
-export async function resolveExerciseSelector(db: Kysely<DatabaseSchema>, selector: string): Promise<number> {
-  if (/^\d+$/.test(selector)) return Number(selector)
-
-  const normalizedSelector = selector.toLowerCase().trim()
-  const rows = await db
-    .selectFrom('ZEXERCISEINFORMATION')
-    .select(['Z_PK as id', 'ZISUSERCREATED as isUserCreated', 'ZNAME as name'])
-    .where('ZSOFTDELETED', 'is not', 1)
-    .execute()
-
-  const exact = rows.filter((row) => {
-    const rawName = (row.name ?? '').toLowerCase()
-    const displayName = formatExerciseDisplayName(row.name, asBool(row.isUserCreated)).toLowerCase()
-    return rawName === normalizedSelector || displayName === normalizedSelector
-  })
-
-  if (exact.length === 1) return exact[0].id
-  if (exact.length > 1) {
-    throw new Error(`Selector "${selector}" is ambiguous: ${renderSelectorCandidateList(exact)}`)
-  }
-
-  const partial = rows.filter((row) => {
-    const rawName = (row.name ?? '').toLowerCase()
-    const displayName = formatExerciseDisplayName(row.name, asBool(row.isUserCreated)).toLowerCase()
-    return rawName.includes(normalizedSelector) || displayName.includes(normalizedSelector)
-  })
-
-  if (partial.length === 1) return partial[0].id
-  if (partial.length > 1) {
-    throw new Error(`Selector "${selector}" is ambiguous: ${renderSelectorCandidateList(partial)}`)
-  }
-
-  throw new Error(`No records found for selector: ${selector}`)
-}
-
-export async function listExercises(
+export async function listApiExerciseMetadata(
   db: Kysely<DatabaseSchema>,
-  filters: ExerciseListFilters,
-): Promise<ExerciseSummary[]> {
-  const nameLike = filters.name ? `%${filters.name}%` : undefined
-  const normalizedNameLike = filters.name ? `%${filters.name.toLowerCase().replaceAll('_', ' ')}%` : undefined
+  filters: ApiExerciseMetadataFilters,
+): Promise<ApiExerciseMetadataRow[]> {
+  const normalizedQuery = filters.q?.toLowerCase().replaceAll(/[\s_-]/g, '')
   let query = db
     .selectFrom('ZEXERCISEINFORMATION as ei')
     .leftJoin('ZEQUIPMENT2 as eq', 'eq.Z_PK', 'ei.ZEQUIPMENT')
-    .leftJoin('ZEXERCISERESULT as er', 'er.ZEXERCISE', 'ei.Z_PK')
-    .leftJoin('ZWORKOUTRESULT as wr', 'wr.Z_PK', 'er.ZWORKOUT')
     .select([
-      'ei.Z_PK as id',
-      'ei.ZNAME as name',
-      'ei.ZISUSERCREATED as isUserCreated',
-      'ei.ZMUSCLES as primaryMuscles',
-      'ei.ZSECONDARYMUSCLES as secondaryMuscles',
-      'ei.ZTIMERBASED as timerBased',
-      'ei.ZSUPPORTSONEREPMAX as supports1RM',
-      'eq.ZNAME as equipment',
-      'eq.ZID as equipmentId',
-      (eb) => eb.fn.max('wr.ZSTARTDATE').as('lastPerformed'),
-      (eb) => eb.fn.count('wr.Z_PK').distinct().as('timesPerformed'),
+      'ei.Z_PK as id', 'ei.ZNAME as name', 'ei.ZALTERNATIVEENGLISHNAMES as alternativeEnglishNames',
+      'ei.ZISUSERCREATED as isUserCreated', 'ei.ZSOFTDELETED as softDeleted',
+      'ei.ZMUSCLES as primaryMuscles', 'ei.ZSECONDARYMUSCLES as secondaryMuscles',
+      'ei.ZDEFAULTPROGRESSMETRIC as defaultProgressMetric', 'ei.ZPERCEPTIONSCALE as perceptionScale',
+      'ei.ZTIMERBASED as timerBased', 'ei.ZSUPPORTSONEREPMAX as supports1RM',
+      'eq.ZNAME as equipment', 'eq.ZID as equipmentId',
     ])
     .where('ei.ZSOFTDELETED', 'is not', 1)
-    .groupBy(['ei.Z_PK', 'eq.ZNAME', 'eq.ZID'])
-    .orderBy('ei.ZNAME', 'asc')
 
-  if (nameLike && normalizedNameLike) {
-    query = query.where((eb) =>
-      eb.or([
-        eb('ei.ZNAME', 'like', nameLike),
-        sql<boolean>`lower(replace(ei.ZNAME, '_', ' ')) like ${normalizedNameLike}`,
-      ]),
-    )
-  }
-
+  if (filters.equipmentId !== undefined) query = query.where('eq.ZID', '=', filters.equipmentId)
   if (filters.muscle) {
-    query = query.where((eb) => eb.or([eb('ei.ZMUSCLES', 'like', `%${filters.muscle}%`), eb('ei.ZSECONDARYMUSCLES', 'like', `%${filters.muscle}%`)]))
+    query = query.where((eb) => eb.or([
+      eb('ei.ZMUSCLES', 'like', `%${filters.muscle}%`),
+      eb('ei.ZSECONDARYMUSCLES', 'like', `%${filters.muscle}%`),
+    ]))
   }
 
-  if (filters.equipment) {
-    query = query.where((eb) => eb.or([eb('eq.ZNAME', 'like', `%${filters.equipment}%`), eb('eq.ZID', 'like', `%${filters.equipment}%`)]))
+  if (normalizedQuery) {
+    const qLike = `%${normalizedQuery}%`
+    query = query.where((eb) => eb.or([
+      sql<boolean>`lower(replace(replace(replace(coalesce(ei.ZNAME, ''), '_', ''), '-', ''), ' ', '')) like ${qLike}`,
+      sql<boolean>`lower(replace(replace(replace(coalesce(ei.ZALTERNATIVEENGLISHNAMES, ''), '_', ''), '-', ''), ' ', '')) like ${qLike}`,
+    ]))
   }
 
-  const rows = await query.execute()
-
-  const summaries = rows.map((row) => ({
+  const rows = await query.orderBy('ei.ZNAME', 'asc').orderBy('ei.Z_PK', 'asc').execute()
+  return rows.map((row) => ({
+    alternativeEnglishNames: splitLabels(row.alternativeEnglishNames, ';'),
+    defaultProgressMetric: row.defaultProgressMetric,
     equipment: formatEquipmentDisplayName(row.equipment, row.equipmentId),
+    equipmentId: row.equipmentId,
     id: row.id,
-    lastPerformed: appleSecondsToIso(row.lastPerformed as null | number),
-    name: formatExerciseDisplayName(row.name, asBool(row.isUserCreated)),
-    primaryMuscles: formatMuscleLabel(row.primaryMuscles),
-    secondaryMuscles: formatMuscleLabel(row.secondaryMuscles),
+    isDeleted: asBool(row.softDeleted),
+    isUserCreated: asBool(row.isUserCreated),
+    name: row.name,
+    perceptionScale: row.perceptionScale,
+    primaryMuscles: muscleLabels(row.primaryMuscles),
+    secondaryMuscles: muscleLabels(row.secondaryMuscles),
     supports1RM: asBool(row.supports1RM),
     timerBased: asBool(row.timerBased),
-    timesPerformed: Number(row.timesPerformed),
   }))
-
-  const sort = filters.sort ?? 'name'
-
-  if (sort === 'timesPerformed') {
-    summaries.sort((a, b) => b.timesPerformed - a.timesPerformed || a.id - b.id)
-    return summaries
-  }
-
-  if (sort === 'lastPerformed') {
-    summaries.sort((a, b) => {
-      if (a.lastPerformed === b.lastPerformed) return a.id - b.id
-      if (a.lastPerformed === null) return 1
-      if (b.lastPerformed === null) return -1
-      return b.lastPerformed.localeCompare(a.lastPerformed)
-    })
-    return summaries
-  }
-
-  summaries.sort((a, b) => {
-    const aName = (a.name ?? '').toLowerCase()
-    const bName = (b.name ?? '').toLowerCase()
-    if (aName === bName) return a.id - b.id
-    return aName.localeCompare(bName)
-  })
-
-  return summaries
 }
 
-export async function getExerciseHistoryRows(
+export async function getApiExerciseMetadata(
   db: Kysely<DatabaseSchema>,
   exerciseId: number,
-  filters: ExerciseHistoryFilters,
-): Promise<ExerciseHistoryRow[]> {
-  const unitPreference = await resolveExerciseWeightUnit(db, exerciseId)
-  const dateRange = dateRangeToAppleSeconds({from: filters.from, to: filters.to})
-  const minWeightKg = filters.minWeight === undefined ? undefined : convertDisplayWeightToKg(filters.minWeight, unitPreference)
-  const maxWeightKg = filters.maxWeight === undefined ? undefined : convertDisplayWeightToKg(filters.maxWeight, unitPreference)
+): Promise<ApiExerciseMetadataRow | null> {
+  const row = await db
+    .selectFrom('ZEXERCISEINFORMATION as ei')
+    .leftJoin('ZEQUIPMENT2 as eq', 'eq.Z_PK', 'ei.ZEQUIPMENT')
+    .select([
+      'ei.Z_PK as id', 'ei.ZNAME as name', 'ei.ZALTERNATIVEENGLISHNAMES as alternativeEnglishNames',
+      'ei.ZISUSERCREATED as isUserCreated', 'ei.ZSOFTDELETED as softDeleted',
+      'ei.ZMUSCLES as primaryMuscles', 'ei.ZSECONDARYMUSCLES as secondaryMuscles',
+      'ei.ZDEFAULTPROGRESSMETRIC as defaultProgressMetric', 'ei.ZPERCEPTIONSCALE as perceptionScale',
+      'ei.ZTIMERBASED as timerBased', 'ei.ZSUPPORTSONEREPMAX as supports1RM',
+      'eq.ZNAME as equipment', 'eq.ZID as equipmentId',
+    ])
+    .where('ei.Z_PK', '=', exerciseId)
+    .executeTakeFirst()
+  if (!row) return null
+  return {
+    alternativeEnglishNames: splitLabels(row.alternativeEnglishNames, ';'),
+    defaultProgressMetric: row.defaultProgressMetric,
+    equipment: formatEquipmentDisplayName(row.equipment, row.equipmentId),
+    equipmentId: row.equipmentId,
+    id: row.id,
+    isDeleted: asBool(row.softDeleted),
+    isUserCreated: asBool(row.isUserCreated),
+    name: row.name,
+    perceptionScale: row.perceptionScale,
+    primaryMuscles: muscleLabels(row.primaryMuscles),
+    secondaryMuscles: muscleLabels(row.secondaryMuscles),
+    supports1RM: asBool(row.supports1RM),
+    timerBased: asBool(row.timerBased),
+  }
+}
 
+export async function getApiExercisePerformanceRows(
+  db: Kysely<DatabaseSchema>,
+  exerciseId: number,
+  filters: ApiExercisePerformanceFilters,
+): Promise<ApiExercisePerformanceRow[]> {
+  const dateRange = dateRangeToAppleSeconds({from: filters.from, to: filters.to})
   let query = db
-    .selectFrom('ZWORKOUTRESULT as wr')
-    .innerJoin('ZEXERCISERESULT as er', 'er.ZWORKOUT', 'wr.Z_PK')
-    .innerJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'er.ZEXERCISE')
+    .selectFrom('ZEXERCISERESULT as er')
+    .innerJoin('ZWORKOUTRESULT as wr', 'wr.Z_PK', 'er.ZWORKOUT')
     .leftJoin('ZROUTINE as r', 'r.Z_PK', 'wr.ZROUTINE')
     .leftJoin('ZPERIOD as per', 'per.Z_PK', 'r.ZPERIOD')
     .leftJoin('ZWORKOUTPLAN as pDirect', 'pDirect.Z_PK', 'r.ZWORKOUTPLAN')
     .leftJoin('ZWORKOUTPLAN as pFromPeriod', 'pFromPeriod.Z_PK', 'per.ZWORKOUTPLAN')
     .leftJoin('ZGYMSETRESULT as gs', 'gs.ZEXERCISE', 'er.Z_PK')
     .select([
-      'wr.Z_PK as workoutId',
-      'wr.ZSTARTDATE as startDate',
-      'wr.ZROUTINENAME as routineNameFromResult',
-      'r.ZNAME as routineNameFromPlan',
-      workingSetCountExpr.as('sets'),
-      workingSetTotalRepsExpr.as('totalReps'),
-      workingSetTopRepsExpr.as('topReps'),
-      workingSetTopWeightExpr.as('topWeight'),
-      workingSetVolumeExpr.as('volume'),
+      'er.Z_PK as id', 'wr.Z_PK as workoutId', 'wr.ZSTARTDATE as startDate',
+      'r.Z_PK as routineId', 'wr.ZROUTINENAME as routineNameFromResult', 'r.ZNAME as routineNameFromPlan',
+      'pDirect.Z_PK as programIdDirect', 'pFromPeriod.Z_PK as programIdFromPeriod',
+      'pDirect.ZNAME as programNameDirect', 'pFromPeriod.ZNAME as programNameFromPeriod',
+      workingSetCountExpr.as('setCount'), workingSetTotalRepsExpr.as('totalReps'),
+      workingSetTopRepsExpr.as('topReps'), workingSetTopWeightExpr.as('topWeightKg'), workingSetVolumeExpr.as('volumeKg'),
     ])
-    .where('ei.Z_PK', '=', exerciseId)
-    .groupBy(['wr.Z_PK', 'wr.ZSTARTDATE', 'wr.ZROUTINENAME', 'r.ZNAME'])
-    .orderBy('wr.ZSTARTDATE', 'desc')
+    .where('er.ZEXERCISE', '=', exerciseId)
+    .groupBy(['er.Z_PK', 'wr.Z_PK', 'wr.ZSTARTDATE', 'r.Z_PK', 'wr.ZROUTINENAME', 'r.ZNAME', 'pDirect.Z_PK', 'pFromPeriod.Z_PK', 'pDirect.ZNAME', 'pFromPeriod.ZNAME'])
 
-  if (filters.program) {
-    const programId = await resolveIdOrName(db, 'ZWORKOUTPLAN', filters.program)
-    query = query.where((eb) => eb.or([eb('r.ZWORKOUTPLAN', '=', programId), eb('per.ZWORKOUTPLAN', '=', programId)]))
-  }
-
-  if (filters.routine) {
-    const routineId = await resolveIdOrName(db, 'ZROUTINE', filters.routine)
-    query = query.where('wr.ZROUTINE', '=', routineId)
-  }
-
+  if (filters.programId !== undefined) query = query.where((eb) => eb.or([eb('r.ZWORKOUTPLAN', '=', filters.programId!), eb('per.ZWORKOUTPLAN', '=', filters.programId!)]))
+  if (filters.routineId !== undefined) query = query.where('wr.ZROUTINE', '=', filters.routineId)
   if (dateRange.from !== undefined) query = query.where('wr.ZSTARTDATE', '>=', dateRange.from)
   if (dateRange.to !== undefined) query = query.where('wr.ZSTARTDATE', '<=', dateRange.to)
   if (filters.minReps !== undefined) query = query.having(workingSetTopRepsExpr, '>=', filters.minReps)
   if (filters.maxReps !== undefined) query = query.having(workingSetTopRepsExpr, '<=', filters.maxReps)
-  if (minWeightKg !== undefined) query = query.having(workingSetTopWeightExpr, '>=', minWeightKg)
-  if (maxWeightKg !== undefined) query = query.having(workingSetTopWeightExpr, '<=', maxWeightKg)
-  if (filters.limit !== undefined) query = query.limit(filters.limit)
+  if (filters.minWeightKg !== undefined) query = query.having(workingSetTopWeightExpr, '>=', filters.minWeightKg)
+  if (filters.maxWeightKg !== undefined) query = query.having(workingSetTopWeightExpr, '<=', filters.maxWeightKg)
 
-  const rows = await query.execute()
+  const rows = await query.orderBy('wr.ZSTARTDATE', 'desc').orderBy('er.Z_PK', 'desc').execute()
+  const ids = rows.map((row) => row.id)
+  const setRows = ids.length === 0 ? [] : await db.selectFrom('ZGYMSETRESULT').select([
+    'Z_PK as id', 'ZEXERCISE as performedExerciseId', 'ZREPS as reps', 'ZRPE as rpe', 'ZTIME as timeSeconds',
+    'ZVOLUME as volumeKg', 'ZWEIGHT as weightKg', 'ZWARMUPSET as warmupSet',
+  ]).where('ZEXERCISE', 'in', ids).orderBy('Z_FOK_EXERCISE', 'asc').orderBy('Z_PK', 'asc').execute()
+  const setsByPerformance = new Map<number, ApiExercisePerformanceSetRow[]>()
+  for (const set of setRows) {
+    if (set.performedExerciseId === null) continue
+    const sets = setsByPerformance.get(set.performedExerciseId) ?? []
+    sets.push({id: set.id, isWarmup: asBool(set.warmupSet), reps: set.reps, rpe: normalizeRpe(set.rpe), timeSeconds: set.timeSeconds, volumeKg: set.volumeKg, weightKg: set.weightKg})
+    setsByPerformance.set(set.performedExerciseId, sets)
+  }
 
-  const normalized: ExerciseHistoryRow[] = rows.map((row) => ({
-    date: appleSecondsToIso(row.startDate),
-    routine: row.routineNameFromResult ?? row.routineNameFromPlan,
-    sets: Number(row.sets),
-    topReps: row.topReps,
-    topWeight: convertKgToDisplayWeight(row.topWeight, unitPreference),
-    totalReps: Number(row.totalReps),
-    volume: convertKgToDisplayVolume(Number(row.volume), unitPreference) ?? 0,
+  return rows.map((row) => ({
+    id: row.id,
+    programId: row.programIdDirect ?? row.programIdFromPeriod,
+    programName: row.programNameDirect ?? row.programNameFromPeriod,
+    routineId: row.routineId,
+    routineName: row.routineNameFromResult ?? row.routineNameFromPlan,
+    sets: setsByPerformance.get(row.id) ?? [],
+    startDate: row.startDate,
+    statistics: {setCount: Number(row.setCount), topReps: row.topReps, topWeightKg: row.topWeightKg, totalReps: Number(row.totalReps), volumeKg: Number(row.volumeKg)},
     workoutId: row.workoutId,
   }))
-
-  return normalized
-}
-
-export async function getExerciseHistoryWithSetsRows(
-  db: Kysely<DatabaseSchema>,
-  exerciseId: number,
-  filters: ExerciseHistoryFilters,
-): Promise<ExerciseHistoryWithSetsRow[]> {
-  const summaryRows = await getExerciseHistoryRows(db, exerciseId, filters)
-  if (summaryRows.length === 0) return []
-
-  const workouts = await Promise.all(summaryRows.map((summary) => getWorkoutDetail(db, summary.workoutId)))
-  const workoutsById = new Map(workouts.map((workout) => [workout.id, workout]))
-
-  return summaryRows.map((summary) => {
-    const workout = workoutsById.get(summary.workoutId)
-    const exercise = workout?.exercises.find((entry) => entry.exerciseId === exerciseId)
-
-    return {
-      date: summary.date,
-      routine: summary.routine,
-      sets: (exercise?.sets ?? []).map((set) => ({
-        isWarmup: set.isWarmup,
-        reps: set.reps,
-        setId: set.id,
-        timeSeconds: set.timeSeconds,
-        volume: set.volume,
-        weight: set.weight,
-      })),
-      topReps: summary.topReps,
-      topWeight: summary.topWeight,
-      totalReps: summary.totalReps,
-      volume: summary.volume,
-      workoutId: summary.workoutId,
-    }
-  })
-}
-
-export async function getExerciseDetail(
-  db: Kysely<DatabaseSchema>,
-  exerciseId: number,
-  historyLimit = 3,
-): Promise<ExerciseDetail> {
-  const row = await db
-    .selectFrom('ZEXERCISEINFORMATION as ei')
-    .leftJoin('ZEQUIPMENT2 as eq', 'eq.Z_PK', 'ei.ZEQUIPMENT')
-    .select([
-      'ei.Z_PK as id',
-      'ei.ZNAME as name',
-      'ei.ZISUSERCREATED as isUserCreated',
-      'ei.ZMUSCLES as primaryMuscles',
-      'ei.ZSECONDARYMUSCLES as secondaryMuscles',
-      'ei.ZDEFAULTPROGRESSMETRIC as defaultProgressMetric',
-      'ei.ZPERCEPTIONSCALE as perceptionScale',
-      'ei.ZTIMERBASED as timerBased',
-      'ei.ZSUPPORTSONEREPMAX as supports1RM',
-      'eq.ZNAME as equipment',
-      'eq.ZID as equipmentId',
-    ])
-    .where('ei.Z_PK', '=', exerciseId)
-    .executeTakeFirst()
-
-  if (!row) throw new Error(`Exercise not found: ${exerciseId}`)
-
-  const routineRows = await db
-    .selectFrom('Z_12ROUTINES as j')
-    .innerJoin('ZEXERCISECONFIGURATION as ec', 'ec.Z_PK', 'j.Z_12EXERCISES')
-    .innerJoin('ZROUTINE as r', 'r.Z_PK', 'j.Z_28ROUTINES')
-    .select(['r.ZNAME as routineName'])
-    .where('ec.ZINFORMATION', '=', exerciseId)
-    .where('r.ZSOFTDELETED', 'is not', 1)
-    .groupBy('r.ZNAME')
-    .orderBy('r.ZNAME', 'asc')
-    .execute()
-
-  const workoutCountRow = await db
-    .selectFrom('ZEXERCISERESULT as er')
-    .select((eb) => eb.fn.count('er.ZWORKOUT').distinct().as('totalWorkouts'))
-    .where('er.ZEXERCISE', '=', exerciseId)
-    .executeTakeFirst()
-
-  const latestHistory = await getExerciseHistoryRows(db, exerciseId, {limit: 1})
-
-  return {
-    defaultProgressMetric: row.defaultProgressMetric,
-    equipment: formatEquipmentDisplayName(row.equipment, row.equipmentId),
-    id: row.id,
-    lastHistoryEntry: latestHistory[0] ?? null,
-    name: formatExerciseDisplayName(row.name, asBool(row.isUserCreated)),
-    perceptionScale: row.perceptionScale,
-    primaryMuscles: formatMuscleLabel(row.primaryMuscles),
-    recentRoutines: routineRows.map((routine) => routine.routineName ?? '(unnamed)').slice(0, historyLimit),
-    secondaryMuscles: formatMuscleLabel(row.secondaryMuscles),
-    supports1RM: asBool(row.supports1RM),
-    timerBased: asBool(row.timerBased),
-    totalRoutines: routineRows.length,
-    totalWorkouts: Number(workoutCountRow?.totalWorkouts ?? 0),
-  }
-}
-
-export async function getLastPerformedExerciseSnapshot(
-  db: Kysely<DatabaseSchema>,
-  exerciseId: number,
-): Promise<ExerciseLastPerformedSnapshot | null> {
-  const latestHistory = await getExerciseHistoryRows(db, exerciseId, {limit: 1})
-  const latest = latestHistory[0]
-  if (!latest) return null
-
-  const workout = await getWorkoutDetail(db, latest.workoutId)
-  const exercise = workout.exercises.find((entry) => entry.exerciseId === exerciseId)
-  if (!exercise) return null
-
-  return {exercise, workout}
 }

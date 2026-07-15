@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+.env.*
+node_modules
+dist
+coverage
+data
+test
+reference
+openapi.json
+npm-debug.log*
+Dockerfile*
+compose.yaml
+docker-compose.yml

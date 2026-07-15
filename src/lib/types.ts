@@ -1,162 +1,64 @@
-export type IdName = {
-  id: number
-  name: string
+export type ApiWeightUnit = 'kg' | 'lb'
+
+export type ApiWeight = {
+  unit: ApiWeightUnit
+  value: null | number
 }
 
-export type ProgramSummary = {
+export type ApiResourceReference = {
+  id: number
+  name: null | string
+}
+
+export type ApiProgram = {
   dateAdded: null | string
   id: number
   isActive: boolean
+  isDeleted: boolean
   isTemplate: boolean
-  name: string
+  name: null | string
 }
 
-export type PlannedSet = {
+export type ApiPlannedSet = {
   id: null | number
   reps: null | number
   rpe: null | number
   timeSeconds: null | number
-  weight: null | number
+  weight: ApiWeight
 }
 
-export type PlannedExercise = {
-  exerciseConfigId: number
-  id: null | number
+export type ApiPlannedExercise = {
+  exerciseId: null | number
+  id: number
   name: null | string
-  plannedReps: null | number
-  plannedSets: null | number
-  plannedTimeSeconds: null | number
-  plannedWeight: null | number
-  sets: PlannedSet[]
+  sets: ApiPlannedSet[]
 }
 
-export type ProgramRoutine = {
-  exercises: PlannedExercise[]
+export type ApiPlannedRoutine = {
+  exercises: ApiPlannedExercise[]
   id: number
   name: null | string
 }
 
-export type ProgramWeek = {
-  id: number
-  routines: ProgramRoutine[]
+export type ApiProgramPlan = {
+  weeks: Array<{
+    id: number
+    routines: ApiPlannedRoutine[]
+  }>
 }
 
-export type ProgramDetailTree = {
-  program: ProgramSummary
-  weeks: ProgramWeek[]
-}
-
-export type RoutineWeekRef = {
+export type ApiRoutineSummary = {
   id: number
-  number: number
-}
-
-export type RoutineSummary = {
-  id: number
+  isDeleted: boolean
   isNext: boolean
   name: null | string
-  program: null | string
-  week: null | number
+  program: ApiResourceReference
+  week: {
+    id: number
+    number: number
+  }
 }
 
-export type RoutineDetail = {
-  program: ProgramSummary
-  routine: ProgramRoutine
-  week: RoutineWeekRef
-  workout: null | WorkoutSummary
-}
-
-export type WorkoutSummary = {
-  date: null | string
-  duration: null | number
-  id: number
-  program: null | string
-  routine: null | string
-}
-
-export type WorkoutSet = {
-  id: number
-  isWarmup: boolean
-  reps: null | number
-  rpe: null | number
-  timeSeconds: null | number
-  volume: null | number
-  weight: null | number
-}
-
-export type WorkoutExerciseDetail = {
-  exerciseId: null | number
-  exerciseResultId: number
-  name: null | string
-  sets: WorkoutSet[]
-}
-
-export type WorkoutDetail = {
-  date: null | string
-  duration: null | number
-  exercises: WorkoutExerciseDetail[]
-  id: number
-  program: null | string
-  routine: null | string
-}
-
-export type NextWorkoutDetail = RoutineDetail
-
-export type ExerciseSummary = {
-  equipment: null | string
-  id: number
-  lastPerformed: null | string
-  name: null | string
-  primaryMuscles: null | string
-  secondaryMuscles: null | string
-  supports1RM: boolean
-  timerBased: boolean
-  timesPerformed: number
-}
-
-export type ExerciseHistoryRow = {
-  date: null | string
-  routine: null | string
-  sets: number
-  topReps: null | number
-  topWeight: null | number
-  totalReps: number
-  volume: number
-  workoutId: number
-}
-
-export type ExerciseHistorySet = {
-  isWarmup: boolean
-  reps: null | number
-  setId: number
-  timeSeconds: null | number
-  volume: null | number
-  weight: null | number
-}
-
-export type ExerciseHistoryWithSetsRow = {
-  date: null | string
-  routine: null | string
-  sets: ExerciseHistorySet[]
-  topReps: null | number
-  topWeight: null | number
-  totalReps: number
-  volume: number
-  workoutId: number
-}
-
-export type ExerciseDetail = {
-  defaultProgressMetric: null | string
-  equipment: null | string
-  id: number
-  lastHistoryEntry: ExerciseHistoryRow | null
-  name: null | string
-  perceptionScale: null | string
-  primaryMuscles: null | string
-  recentRoutines: string[]
-  secondaryMuscles: null | string
-  supports1RM: boolean
-  timerBased: boolean
-  totalRoutines: number
-  totalWorkouts: number
+export type ApiRoutineDetail = ApiRoutineSummary & {
+  exercises: ApiPlannedExercise[]
 }

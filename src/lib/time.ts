@@ -4,14 +4,17 @@ const APPLE_EPOCH_UNIX_OFFSET_SECONDS = 978_307_200
 
 export type DateFilterInput = {
   from?: string
-  on?: string
   to?: string
 }
 
-export function appleSecondsToIso(value: null | number): null | string {
+/**
+ * API timestamps are always rendered in UTC. Date-only filter boundaries still
+ * use the process timezone through dateRangeToAppleSeconds.
+ */
+export function appleSecondsToUtcIso(value: null | number): null | string {
   if (value === null || value === undefined) return null
 
-  return formatISO(appleSecondsToDate(value))
+  return appleSecondsToDate(value).toISOString()
 }
 
 function parseLocalDate(value: string): Date {
@@ -37,16 +40,6 @@ function dateToAppleSeconds(date: Date): number {
 }
 
 export function dateRangeToAppleSeconds(input: DateFilterInput): {from?: number; to?: number} {
-  if (input.on) {
-    const start = startOfDay(parseLocalDate(input.on))
-    const end = endOfDay(start)
-
-    return {
-      from: dateToAppleSeconds(start),
-      to: dateToAppleSeconds(end),
-    }
-  }
-
   const output: {from?: number; to?: number} = {}
 
   if (input.from) {
@@ -64,7 +57,7 @@ export function dateRangeToAppleSeconds(input: DateFilterInput): {from?: number;
     output.to !== undefined &&
     isAfter(appleSecondsToDate(output.from), appleSecondsToDate(output.to))
   ) {
-    throw new Error('Invalid date range: --from must be before or equal to --to.')
+    throw new Error('Invalid date range: from must be before or equal to to.')
   }
 
   return output

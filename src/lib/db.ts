@@ -26,6 +26,7 @@ export interface DatabaseSchema {
   }
   ZEXERCISEINFORMATION: {
     Z_PK: number
+    ZALTERNATIVEENGLISHNAMES: null | string
     ZDEFAULTPROGRESSMETRIC: null | string
     ZEQUIPMENT: null | number
     ZISUSERCREATED: null | number
@@ -109,9 +110,9 @@ export type DbContext = {
   sqlite: Database.Database
 }
 
-export function openDb(): DbContext {
-  const path = getDbPath()
+export function openDb(path = getDbPath()): DbContext {
   const sqlite = new Database(path, {fileMustExist: true, readonly: true})
+  sqlite.pragma('query_only = ON')
   const db = new Kysely<DatabaseSchema>({
     dialect: new SqliteDialect({database: sqlite}),
   })
