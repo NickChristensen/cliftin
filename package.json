@@ -47,14 +47,15 @@
     "lint": "eslint",
     "openapi:generate": "npm run build && node dist/openapi.js",
     "openapi:validate": "npm run openapi:generate && redocly lint openapi.json",
+    "openapi:check": "npm run openapi:validate && git diff --exit-code -- openapi.json",
     "posttest": "npm run lint",
     "prepare": "simple-git-hooks",
     "start": "node dist/server.js",
     "test": "mocha --forbid-only \"test/**/*.test.ts\""
   },
   "simple-git-hooks": {
-    "pre-commit": "npm run openapi:validate && git diff --exit-code -- openapi.json",
-    "pre-push": "npm test && npm run openapi:validate && git diff --exit-code -- openapi.json"
+    "pre-commit": "npm run openapi:check",
+    "pre-push": "npm test && npm run openapi:check"
   },
   "types": "dist/index.d.ts"
 }

@@ -21,9 +21,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - run: npm run openapi:validate
-      - name: Ensure the generated OpenAPI document is committed
-        run: git diff --exit-code -- openapi.json
+      - run: npm run openapi:check
       - name: Require a matching package version for version tags
         if: startsWith(github.ref, 'refs/tags/v')
         env:
