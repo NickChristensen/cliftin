@@ -110,6 +110,18 @@ export type DbContext = {
   sqlite: Database.Database
 }
 
+/**
+ * Runs related reads against one SQLite snapshot. SQLite's plain `BEGIN`
+ * transaction is deferred, so it does not acquire a lock until the first
+ * query while ensuring every subsequent query observes that same snapshot.
+ */
+export async function withDeferredReadTransaction<T>(
+  db: Kysely<DatabaseSchema>,
+  operation: (transaction: Kysely<DatabaseSchema>) => Promise<T>,
+): Promise<T> {
+  return db.transaction().execute(operation)
+}
+
 export function openDb(path = getDbPath()): DbContext {
   const sqlite = new Database(path, {fileMustExist: true, readonly: true})
   sqlite.pragma('query_only = ON')

@@ -1,6 +1,7 @@
 import type {FastifyPluginAsyncTypebox} from '@fastify/type-provider-typebox'
 
 import {HttpError, notFound} from '../http/errors.js'
+import {withDeferredReadTransaction} from '../lib/db.js'
 import {formatExerciseDisplayName} from '../lib/names.js'
 import {type ApiWorkoutDetailRow, type ApiWorkoutListRow, getApiWorkoutDetail, listApiWorkouts} from '../lib/repositories/workouts.js'
 import {appleSecondsToUtcIso, dateRangeToAppleSeconds} from '../lib/time.js'
@@ -112,23 +113,29 @@ export const workoutRoutes: FastifyPluginAsyncTypebox = async (app) => {
   })
 
   app.get('/v1/workouts/latest', {schema: {...GetLatestWorkoutRouteSchema, querystring: WorkoutDetailQuerySchema}}, async (request) => {
-    const latest = (await listApiWorkouts(app.db.db, {limit: 1}))[0]
-    if (!latest) throw notFound('workout-not-found', 'Workout not found')
-    const workout = await getApiWorkoutDetail(app.db.db, latest.id)
-    if (!workout) throw notFound('workout-not-found', 'Workout not found')
-    return toWorkoutDetail(workout, request.query.unit ?? 'lb')
+    return withDeferredReadTransaction(app.db.db, async (db) => {
+      const latest = (await listApiWorkouts(db, {limit: 1}))[0]
+      if (!latest) throw notFound('workout-not-found', 'Workout not found')
+      const workout = await getApiWorkoutDetail(db, latest.id)
+      if (!workout) throw notFound('workout-not-found', 'Workout not found')
+      return toWorkoutDetail(workout, request.query.unit ?? 'lb')
+    })
   })
 
   app.get('/v1/workouts/:workoutId', {schema: {...GetWorkoutRouteSchema, params: WorkoutIdParamsSchema, querystring: WorkoutDetailQuerySchema}}, async (request) => {
-    const workout = await getApiWorkoutDetail(app.db.db, request.params.workoutId)
-    if (!workout) throw notFound('workout-not-found', 'Workout not found')
-    return toWorkoutDetail(workout, request.query.unit ?? 'lb')
+    return withDeferredReadTransaction(app.db.db, async (db) => {
+      const workout = await getApiWorkoutDetail(db, request.params.workoutId)
+      if (!workout) throw notFound('workout-not-found', 'Workout not found')
+      return toWorkoutDetail(workout, request.query.unit ?? 'lb')
+    })
   })
 
   app.get('/v1/workouts/:workoutId/routine', {schema: {...GetWorkoutRoutineRouteSchema, params: WorkoutIdParamsSchema, querystring: EmptyObjectSchema}}, async (request) => {
-    const workout = await getApiWorkoutDetail(app.db.db, request.params.workoutId)
-    if (!workout) throw notFound('workout-not-found', 'Workout not found')
-    if (workout.routineId === null) throw notFound('routine-not-found', 'Routine not found for workout')
-    return {id: workout.routineId, name: workout.routineName}
+    return withDeferredReadTransaction(app.db.db, async (db) => {
+      const workout = await getApiWorkoutDetail(db, request.params.workoutId)
+      if (!workout) throw notFound('workout-not-found', 'Workout not found')
+      if (workout.routineId === null) throw notFound('routine-not-found', 'Routine not found for workout')
+      return {id: workout.routineId, name: workout.routineName}
+    })
   })
 }

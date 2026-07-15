@@ -2,6 +2,7 @@ import type {FastifyPluginAsyncTypebox} from '@fastify/type-provider-typebox'
 
 import {HttpError, notFound} from '../http/errors.js'
 import {paginateRows} from '../http/pagination.js'
+import {withDeferredReadTransaction} from '../lib/db.js'
 import {formatExerciseDisplayName} from '../lib/names.js'
 import {type ApiExercisePerformanceRow, getApiExerciseMetadata, getApiExercisePerformanceRows, listApiExerciseMetadata} from '../lib/repositories/exercises.js'
 import {appleSecondsToUtcIso, dateRangeToAppleSeconds} from '../lib/time.js'
@@ -124,56 +125,60 @@ export const exerciseRoutes: FastifyPluginAsyncTypebox = async (app) => {
   })
 
   app.get('/v1/exercises/:exerciseId/statistics', {schema: {...GetExerciseStatisticsRouteSchema, params: ExerciseIdParamsSchema, querystring: ExerciseStatisticsQuerySchema}}, async (request) => {
-    const exercise = await getApiExerciseMetadata(app.db.db, request.params.exerciseId)
-    if (!exercise) throw notFound('exercise-not-found', 'Exercise not found')
     validateDateFilters(request.query.from, request.query.to)
     const unit = request.query.unit ?? 'lb'
-    const rows = await getApiExercisePerformanceRows(app.db.db, request.params.exerciseId, {
-      ...request.query,
-      maxWeightKg: request.query.maxWeight === undefined ? undefined : convertApiWeightToKg(request.query.maxWeight, unit),
-      minWeightKg: request.query.minWeight === undefined ? undefined : convertApiWeightToKg(request.query.minWeight, unit),
-    })
-    let lastPerformedAt: null | string = null
-    let setCount = 0
-    let topReps: null | number = null
-    let topWeightKg: null | number = null
-    let totalReps = 0
-    let volumeKg = 0
-    const workoutIds = new Set<number>()
-    for (const row of rows) {
-      if (lastPerformedAt === null) lastPerformedAt = appleSecondsToUtcIso(row.startDate)
-      setCount += row.statistics.setCount
-      totalReps += row.statistics.totalReps
-      volumeKg += row.statistics.volumeKg
-      workoutIds.add(row.workoutId)
-      if (row.statistics.topReps !== null && (topReps === null || row.statistics.topReps > topReps)) topReps = row.statistics.topReps
-      if (row.statistics.topWeightKg !== null && (topWeightKg === null || row.statistics.topWeightKg > topWeightKg)) topWeightKg = row.statistics.topWeightKg
-    }
+    return withDeferredReadTransaction(app.db.db, async (db) => {
+      const exercise = await getApiExerciseMetadata(db, request.params.exerciseId)
+      if (!exercise) throw notFound('exercise-not-found', 'Exercise not found')
+      const rows = await getApiExercisePerformanceRows(db, request.params.exerciseId, {
+        ...request.query,
+        maxWeightKg: request.query.maxWeight === undefined ? undefined : convertApiWeightToKg(request.query.maxWeight, unit),
+        minWeightKg: request.query.minWeight === undefined ? undefined : convertApiWeightToKg(request.query.minWeight, unit),
+      })
+      let lastPerformedAt: null | string = null
+      let setCount = 0
+      let topReps: null | number = null
+      let topWeightKg: null | number = null
+      let totalReps = 0
+      let volumeKg = 0
+      const workoutIds = new Set<number>()
+      for (const row of rows) {
+        if (lastPerformedAt === null) lastPerformedAt = appleSecondsToUtcIso(row.startDate)
+        setCount += row.statistics.setCount
+        totalReps += row.statistics.totalReps
+        volumeKg += row.statistics.volumeKg
+        workoutIds.add(row.workoutId)
+        if (row.statistics.topReps !== null && (topReps === null || row.statistics.topReps > topReps)) topReps = row.statistics.topReps
+        if (row.statistics.topWeightKg !== null && (topWeightKg === null || row.statistics.topWeightKg > topWeightKg)) topWeightKg = row.statistics.topWeightKg
+      }
 
-    return {
-      lastPerformedAt,
-      performanceCount: rows.length,
-      setCount,
-      topReps,
-      topWeight: {unit, value: convertKgToApiWeight(topWeightKg, unit)},
-      totalReps,
-      volume: {unit, value: convertKgToApiWeight(volumeKg, unit)},
-      workoutCount: workoutIds.size,
-    }
+      return {
+        lastPerformedAt,
+        performanceCount: rows.length,
+        setCount,
+        topReps,
+        topWeight: {unit, value: convertKgToApiWeight(topWeightKg, unit)},
+        totalReps,
+        volume: {unit, value: convertKgToApiWeight(volumeKg, unit)},
+        workoutCount: workoutIds.size,
+      }
+    })
   })
 
   app.get('/v1/exercises/:exerciseId/performances', {schema: {...ListExercisePerformancesRouteSchema, params: ExerciseIdParamsSchema, querystring: ExercisePerformanceQuerySchema}}, async (request) => {
-    const exercise = await getApiExerciseMetadata(app.db.db, request.params.exerciseId)
-    if (!exercise) throw notFound('exercise-not-found', 'Exercise not found')
     validateDateFilters(request.query.from, request.query.to)
     const unit = request.query.unit ?? 'lb'
-    const rows = await getApiExercisePerformanceRows(app.db.db, request.params.exerciseId, {
-      ...request.query,
-      maxWeightKg: request.query.maxWeight === undefined ? undefined : convertApiWeightToKg(request.query.maxWeight, unit),
-      minWeightKg: request.query.minWeight === undefined ? undefined : convertApiWeightToKg(request.query.minWeight, unit),
+    return withDeferredReadTransaction(app.db.db, async (db) => {
+      const exercise = await getApiExerciseMetadata(db, request.params.exerciseId)
+      if (!exercise) throw notFound('exercise-not-found', 'Exercise not found')
+      const rows = await getApiExercisePerformanceRows(db, request.params.exerciseId, {
+        ...request.query,
+        maxWeightKg: request.query.maxWeight === undefined ? undefined : convertApiWeightToKg(request.query.maxWeight, unit),
+        minWeightKg: request.query.minWeight === undefined ? undefined : convertApiWeightToKg(request.query.minWeight, unit),
+      })
+      const {nextCursor, page} = filteredRows(rows, request.query)
+      const items = page.map((row) => toPerformance(row, request.params.exerciseId, unit))
+      return nextCursor === undefined ? {items} : {items, nextCursor}
     })
-    const {nextCursor, page} = filteredRows(rows, request.query)
-    const items = page.map((row) => toPerformance(row, request.params.exerciseId, unit))
-    return nextCursor === undefined ? {items} : {items, nextCursor}
   })
 }
