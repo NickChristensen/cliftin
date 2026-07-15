@@ -21,6 +21,7 @@ export interface DatabaseSchema {
     ZREPS: null | number
     ZSETS: null | number
     ZTIME: null | number
+    ZUSEINDIVIDUALSETS: null | number
     ZWEIGHT: null | number
   }
   ZEXERCISEINFORMATION: {

@@ -61,6 +61,8 @@ ZWORKOUTPLAN (Program)
   Do not assume `ZROUTINE.ZWORKOUTPLAN` is always populated.
 - Planned RPE uses sentinel semantics:
   `16` is effectively the default/unspecified value and is best normalized to `null` in CLI output.
+- `ZEXERCISECONFIGURATION.ZUSEINDIVIDUALSETS` controls planned-set source of truth:
+  when it is `1`, use related `ZSETCONFIGURATION` rows ordered by `ZSETINDEX`, but cap the result to the positive `ZSETS` count. Do not synthesize missing child rows when fewer remain after edits. Otherwise, ignore any child rows and synthesize the planned sets from `ZSETS`, `ZREPS`, `ZWEIGHT`, and `ZTIME`.
 - Weight storage and display units differ:
   planned and logged weight values appear to be stored in kg even when user preference is imperial.
   Resolve display unit from `ZSETTINGS.ZMEASURMENTUNIT` (fallback to equipment unit metadata) and convert for output as needed.

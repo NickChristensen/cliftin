@@ -32,21 +32,8 @@ function buildPlannedFallbackSets(
   }))
 }
 
-function explicitSetsMatchSummary(
-  explicitSets: PlannedSet[],
-  summary: PlannedExerciseSummary,
-  unitPreference: Awaited<ReturnType<typeof resolveProgramWeightUnit>>,
-): boolean {
-  const expectedCount = Math.max(summary.plannedSets ?? 1, 1)
-  const expectedWeight = convertKgToDisplayWeight(summary.plannedWeight, unitPreference)
-
-  if (explicitSets.length !== expectedCount) return false
-
-  return explicitSets.every((set) =>
-    set.reps === summary.plannedReps &&
-    set.timeSeconds === summary.plannedTimeSeconds &&
-    set.weight === expectedWeight
-  )
+function capIndividualSets(sets: PlannedSet[], plannedSets: null | number): PlannedSet[] {
+  return plannedSets !== null && plannedSets > 0 ? sets.slice(0, plannedSets) : sets
 }
 
 export async function listPrograms(db: Kysely<DatabaseSchema>): Promise<ProgramSummary[]> {
@@ -181,6 +168,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       'ec.ZREPS as plannedReps',
       'ec.ZWEIGHT as plannedWeight',
       'ec.ZTIME as plannedTimeSeconds',
+      'ec.ZUSEINDIVIDUALSETS as useIndividualSets',
       'ei.Z_PK as exerciseId',
       'ei.ZISUSERCREATED as isUserCreated',
       'ei.ZNAME as exerciseName',
@@ -211,6 +199,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
             'ZTIME as timeSeconds',
           ])
           .where('ZEXERCISECONFIGURATION', 'in', exerciseConfigIds)
+          .orderBy('ZEXERCISECONFIGURATION', 'asc')
           .orderBy('ZSETINDEX', 'asc')
           .execute()
 
@@ -242,10 +231,7 @@ export async function getProgramDetail(db: Kysely<DatabaseSchema>, programId: nu
       plannedWeight: row.plannedWeight,
     }
     const fallbackSet = buildPlannedFallbackSets(plannedSummary, unitPreference)
-    const selectedSets =
-      explicitSets.length > 0 && explicitSetsMatchSummary(explicitSets, plannedSummary, unitPreference)
-        ? explicitSets
-        : fallbackSet
+    const selectedSets = row.useIndividualSets === 1 ? capIndividualSets(explicitSets, row.plannedSets) : fallbackSet
 
     current.push({
       exerciseConfigId: row.exerciseConfigId,
