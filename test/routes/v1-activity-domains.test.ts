@@ -1,4 +1,5 @@
 import {TypeBoxTypeProvider, TypeBoxValidatorCompiler} from '@fastify/type-provider-typebox'
+import Database from 'better-sqlite3'
 import {expect} from 'chai'
 import Fastify from 'fastify'
 
@@ -12,9 +13,9 @@ import {createTestDb} from '../support/db.js'
 describe('v1 activity workout and exercise routes', () => {
   const dbPath = createTestDb()
 
-  async function createApp() {
+  async function createApp(path = dbPath) {
     registerFormats()
-    const db = openDb(dbPath)
+    const db = openDb(path)
     const app = Fastify().withTypeProvider<TypeBoxTypeProvider>()
     app.setValidatorCompiler(TypeBoxValidatorCompiler)
     app.decorate('db', db)
@@ -108,6 +109,31 @@ describe('v1 activity workout and exercise routes', () => {
       expect(performances.json().items).to.have.length(1)
       expect(performances.json().items[0]).to.include({exerciseId: 1000, id: 5001, workoutId: 4001})
       expect(performances.json().items[0].sets[0].weight).to.deep.equal({unit: 'kg', value: 105})
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('finds a derived parenthetical exercise display name without normalizing unrelated punctuation', async () => {
+    const searchDbPath = createTestDb()
+    const fixtureDb = new Database(searchDbPath)
+    fixtureDb.prepare(`
+      insert into ZEXERCISEINFORMATION (
+        Z_PK, ZNAME, ZMUSCLES, ZSECONDARYMUSCLES, ZEQUIPMENT, ZTIMERBASED,
+        ZSUPPORTSONEREPMAX, ZISUSERCREATED, ZSOFTDELETED,
+        ZDEFAULTPROGRESSMETRIC, ZPERCEPTIONSCALE
+      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(1004, 'chin_up_weighted', 'back', 'biceps', null, 0, 1, 0, 0, 'maxWeight', 'rpe')
+    fixtureDb.close()
+
+    const app = await createApp(searchDbPath)
+    try {
+      const friendlyName = await app.inject({method: 'GET', url: '/v1/exercises?q=Chin%20Up%20%28Weighted%29'})
+      const unrelatedPunctuation = await app.inject({method: 'GET', url: '/v1/exercises?q=Chin%20Up%20%5BWeighted%5D'})
+
+      expect(friendlyName.statusCode).to.equal(200)
+      expect(friendlyName.json().items.find((item: {id: number}) => item.id === 1004)).to.include({id: 1004, name: 'Chin Up (Weighted)'})
+      expect(unrelatedPunctuation.json().items).to.deep.equal([])
     } finally {
       await app.close()
     }

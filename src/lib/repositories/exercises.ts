@@ -90,7 +90,9 @@ export async function listApiExerciseMetadata(
   db: Kysely<DatabaseSchema>,
   filters: ApiExerciseMetadataFilters,
 ): Promise<ApiExerciseMetadataRow[]> {
-  const normalizedQuery = filters.q?.toLowerCase().replaceAll(/[\s_-]/g, '')
+  // These are the only separators formatExerciseDisplayName adds to stored
+  // identifiers, including its parenthetical assisted/weighted suffixes.
+  const normalizedQuery = filters.q?.toLowerCase().replaceAll(/[\s_()-]/g, '')
   let query = db
     .selectFrom('ZEXERCISEINFORMATION as ei')
     .leftJoin('ZEQUIPMENT2 as eq', 'eq.Z_PK', 'ei.ZEQUIPMENT')
@@ -115,8 +117,8 @@ export async function listApiExerciseMetadata(
   if (normalizedQuery) {
     const qLike = `%${normalizedQuery}%`
     query = query.where((eb) => eb.or([
-      sql<boolean>`lower(replace(replace(replace(coalesce(ei.ZNAME, ''), '_', ''), '-', ''), ' ', '')) like ${qLike}`,
-      sql<boolean>`lower(replace(replace(replace(coalesce(ei.ZALTERNATIVEENGLISHNAMES, ''), '_', ''), '-', ''), ' ', '')) like ${qLike}`,
+      sql<boolean>`lower(replace(replace(replace(replace(replace(coalesce(ei.ZNAME, ''), '_', ''), '-', ''), ' ', ''), '(', ''), ')', '')) like ${qLike}`,
+      sql<boolean>`lower(replace(replace(replace(replace(replace(coalesce(ei.ZALTERNATIVEENGLISHNAMES, ''), '_', ''), '-', ''), ' ', ''), '(', ''), ')', '')) like ${qLike}`,
     ]))
   }
 
