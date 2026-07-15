@@ -4,7 +4,7 @@ services:
       context: .
     environment:
       LIFTIN_DB_PATH: /liftin/BelloDataModel.sqlite
-      TZ: "${TZ:?Set TZ to an IANA timezone such as America/Chicago}"
+      TZ: America/Chicago
     ports:
       - "127.0.0.1:${PORT:-3000}:3000"
     labels:
@@ -12,4 +12,4 @@ services:
     read_only: true
     restart: unless-stopped
     volumes:
-      - "${LIFTIN_DIR:?Set LIFTIN_DIR to the directory containing BelloDataModel.sqlite}:/liftin:ro"
+      - "/Users/louie/Library/Containers/com.nstrm.Bello/Data/Library/Application Support/Liftin:/liftin:ro"
