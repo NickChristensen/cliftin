@@ -164,28 +164,45 @@ describe('v1 activity workout and exercise routes', () => {
     }
   })
 
-  it('preserves the current nullable performance cursor comparison semantics', async () => {
+  it('cursor-paginates null and non-null timestamps without omissions or duplicates', async () => {
     const nullableDbPath = createTestDb()
     const fixtureDb = new Database(nullableDbPath)
     fixtureDb.prepare('insert into ZWORKOUTRESULT values (?, ?, ?, ?, ?)').run(4002, 100, 'Day A', null, 3400)
+    fixtureDb.prepare('insert into ZWORKOUTRESULT values (?, ?, ?, ?, ?)').run(4003, 100, 'Day A', null, 3300)
+    fixtureDb.prepare('insert into ZWORKOUTRESULT values (?, ?, ?, ?, ?)').run(4004, 100, 'Day A', 700000100, 3200)
     fixtureDb.prepare('insert into ZEXERCISERESULT values (?, ?, ?, ?, ?)').run(5005, 4002, 2000, 1000, 300)
-    fixtureDb.prepare('insert into ZGYMSETRESULT values (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(6006, 5005, 100, 7, 110, 770, null, null, 0)
+    fixtureDb.prepare('insert into ZEXERCISERESULT values (?, ?, ?, ?, ?)').run(5006, 4003, 2000, 1000, 400)
+    fixtureDb.prepare('insert into ZEXERCISERESULT values (?, ?, ?, ?, ?)').run(5007, 4004, 2000, 1000, 500)
     fixtureDb.close()
 
     const app = await createApp(nullableDbPath)
     try {
-      const descending = await app.inject({method: 'GET', url: '/v1/exercises/1000/performances?limit=2'})
-      const nullCursor = Buffer.from(JSON.stringify({id: 5005, sort: '-startedAt', startedAt: null})).toString('base64url')
-      const afterPageCursor = await app.inject({method: 'GET', url: `/v1/exercises/1000/performances?limit=2&cursor=${descending.json().nextCursor}`})
-      const afterNullCursor = await app.inject({method: 'GET', url: `/v1/exercises/1000/performances?cursor=${nullCursor}`})
+      async function allPageIds(url: string): Promise<number[]> {
+        const ids: number[] = []
+        let cursor: string | undefined
+        do {
+          const response = await app.inject({method: 'GET', url: `${url}&limit=1${cursor === undefined ? '' : `&cursor=${cursor}`}`})
+          expect(response.statusCode, response.body).to.equal(200)
+          const page = response.json()
+          ids.push(...page.items.map((item: {id: number}) => item.id))
+          cursor = page.nextCursor
+        } while (cursor !== undefined)
+        return ids
+      }
 
-      expect(descending.statusCode).to.equal(200)
-      expect(descending.json().items.map((item: {id: number}) => item.id)).to.deep.equal([5001, 5000])
-      expect(descending.json().nextCursor).to.be.a('string')
-      expect(afterPageCursor.statusCode).to.equal(200)
-      expect(afterPageCursor.json().items).to.deep.equal([])
-      expect(afterNullCursor.statusCode).to.equal(200)
-      expect(afterNullCursor.json().items.map((item: {id: number}) => item.id)).to.deep.equal([5001, 5000])
+      const descendingWorkouts = await allPageIds('/v1/workouts?sort=-startedAt')
+      const ascendingWorkouts = await allPageIds('/v1/workouts?sort=startedAt')
+      const descendingPerformances = await allPageIds('/v1/exercises/1000/performances?sort=-startedAt')
+      const ascendingPerformances = await allPageIds('/v1/exercises/1000/performances?sort=startedAt')
+
+      expect(descendingWorkouts).to.deep.equal([4001, 4004, 4000, 4003, 4002])
+      expect(ascendingWorkouts).to.deep.equal([4002, 4003, 4000, 4004, 4001])
+      expect(descendingPerformances).to.deep.equal([5001, 5007, 5000, 5006, 5005])
+      expect(ascendingPerformances).to.deep.equal([5005, 5006, 5000, 5007, 5001])
+      expect(new Set(descendingWorkouts)).to.have.length(descendingWorkouts.length)
+      expect(new Set(ascendingWorkouts)).to.have.length(ascendingWorkouts.length)
+      expect(new Set(descendingPerformances)).to.have.length(descendingPerformances.length)
+      expect(new Set(ascendingPerformances)).to.have.length(ascendingPerformances.length)
     } finally {
       await app.close()
     }

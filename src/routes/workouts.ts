@@ -53,9 +53,14 @@ function encodeCursor(row: ApiWorkoutListRow, sort: WorkoutSort): string {
 function isAfterCursor(row: ApiWorkoutListRow, cursor: WorkoutCursor, descending: boolean): boolean {
   const startedAt = appleSecondsToUtcIso(row.startDate)
   if (startedAt === cursor.startedAt) return descending ? row.id < cursor.id : row.id > cursor.id
-  if (startedAt === null) return !descending
-  if (cursor.startedAt === null) return descending
-  return descending ? startedAt < cursor.startedAt : startedAt > cursor.startedAt
+  if (descending) {
+    if (cursor.startedAt === null) return false
+    if (startedAt === null) return true
+    return startedAt < cursor.startedAt
+  }
+  if (cursor.startedAt === null) return true
+  if (startedAt === null) return false
+  return startedAt > cursor.startedAt
 }
 
 function reference(id: null | number, name: null | string): null | {id: number; name: null | string} {

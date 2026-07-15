@@ -261,21 +261,21 @@ function applyPerformanceCursor(
 ) {
   if (cursor.startedAt === null) {
     return query.where((eb) => descending
-      ? eb.or([
+      ? eb.and([eb('wr.ZSTARTDATE', 'is', null), eb('er.Z_PK', '<', cursor.id)])
+      : eb.or([
         eb('wr.ZSTARTDATE', 'is not', null),
-        eb.and([eb('wr.ZSTARTDATE', 'is', null), eb('er.Z_PK', '<', cursor.id)]),
-      ])
-      : eb.and([eb('wr.ZSTARTDATE', 'is', null), eb('er.Z_PK', '>', cursor.id)]))
+        eb.and([eb('wr.ZSTARTDATE', 'is', null), eb('er.Z_PK', '>', cursor.id)]),
+      ]))
   }
 
   const startedAt = cursorStartDate(cursor.startedAt)
   return query.where((eb) => descending
     ? eb.or([
+      eb('wr.ZSTARTDATE', 'is', null),
       eb('wr.ZSTARTDATE', '<', startedAt),
       eb.and([eb('wr.ZSTARTDATE', '=', startedAt), eb('er.Z_PK', '<', cursor.id)]),
     ])
     : eb.or([
-      eb('wr.ZSTARTDATE', 'is', null),
       eb('wr.ZSTARTDATE', '>', startedAt),
       eb.and([eb('wr.ZSTARTDATE', '=', startedAt), eb('er.Z_PK', '>', cursor.id)]),
     ]))
