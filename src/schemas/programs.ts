@@ -39,26 +39,32 @@ export const ProgramSchema = Type.Object(
   {additionalProperties: false},
 )
 
-export const PlannedSetSchema = Type.Object(
-  {
-    id: Type.Union([Type.Integer({minimum: 1}), Type.Null()]),
-    reps: NullableNumberSchema,
-    rpe: NullableNumberSchema,
-    timeSeconds: NullableNumberSchema,
-    weight: WeightSchema,
-  },
+const PlannedSetBaseSchema = {
+  id: Type.Union([Type.Integer({minimum: 1}), Type.Null()]),
+  rpe: NullableNumberSchema,
+  weight: WeightSchema,
+}
+
+export const TimerBasedPlannedSetSchema = Type.Object(
+  {...PlannedSetBaseSchema, reps: Type.Null(), timeSeconds: Type.Number()},
   {additionalProperties: false},
 )
 
-export const PlannedExerciseSchema = Type.Object(
-  {
-    exerciseId: Type.Union([Type.Integer({description: 'Exercise definition primary key.', minimum: 1}), Type.Null()]),
-    id: Type.Integer({description: 'Exercise configuration primary key.', minimum: 1}),
-    name: NullableStringSchema,
-    sets: Type.Array(PlannedSetSchema),
-  },
+export const RepBasedPlannedSetSchema = Type.Object(
+  {...PlannedSetBaseSchema, reps: NullableNumberSchema, timeSeconds: Type.Null()},
   {additionalProperties: false},
 )
+
+const PlannedExerciseBaseSchema = {
+  exerciseId: Type.Union([Type.Integer({description: 'Exercise definition primary key.', minimum: 1}), Type.Null()]),
+  id: Type.Integer({description: 'Exercise configuration primary key.', minimum: 1}),
+  name: NullableStringSchema,
+}
+
+export const PlannedExerciseSchema = Type.Union([
+  Type.Object({...PlannedExerciseBaseSchema, sets: Type.Array(TimerBasedPlannedSetSchema), timerBased: Type.Literal(true)}, {additionalProperties: false}),
+  Type.Object({...PlannedExerciseBaseSchema, sets: Type.Array(RepBasedPlannedSetSchema), timerBased: Type.Literal(false)}, {additionalProperties: false}),
+])
 
 export const PlannedRoutineSchema = Type.Object(
   {

@@ -5,7 +5,8 @@ import {DatabaseSchema} from '../db.js'
 import {formatExerciseDisplayName} from '../names.js'
 import {normalizeRpe} from '../rpe.js'
 import {appleSecondsToUtcIso} from '../time.js'
-import {ApiPlannedExercise, ApiPlannedSet, ApiProgram, ApiProgramPlan, ApiWeightUnit} from '../types.js'
+import {normalizeTimerBasedSet} from '../timer-based.js'
+import {ApiPlannedExercise, ApiProgram, ApiProgramPlan, ApiWeightUnit} from '../types.js'
 import {convertKgToApiWeight} from '../units.js'
 
 function asBool(value: null | number): boolean {
@@ -16,7 +17,15 @@ function apiWeight(value: null | number, unit: ApiWeightUnit): {unit: ApiWeightU
   return {unit, value: convertKgToApiWeight(value, unit)}
 }
 
-function capApiIndividualSets(sets: ApiPlannedSet[], plannedSets: null | number): ApiPlannedSet[] {
+type ApiPlannedSetSource = {
+  id: null | number
+  reps: null | number
+  rpe: null | number
+  timeSeconds: null | number
+  weight: {unit: ApiWeightUnit; value: null | number}
+}
+
+function capApiIndividualSets(sets: ApiPlannedSetSource[], plannedSets: null | number): ApiPlannedSetSource[] {
   return plannedSets !== null && plannedSets > 0 ? sets.slice(0, plannedSets) : sets
 }
 
@@ -175,6 +184,7 @@ export async function getApiProgramPlan(
       'ec.ZINFORMATION as exerciseId',
       'ei.ZISUSERCREATED as isUserCreated',
       'ei.ZNAME as exerciseName',
+      'ei.ZTIMERBASED as timerBased',
     ])
     .where((eb) => eb.or([eb('p.ZWORKOUTPLAN', '=', programId), eb('r.ZWORKOUTPLAN', '=', programId)]))
     .where('ec.Z_PK', 'is not', null)
@@ -207,7 +217,7 @@ export async function getApiProgramPlan(
           .orderBy('ZSETINDEX', 'asc')
           .execute()
 
-  const setsByExerciseConfig = new Map<number, ApiPlannedSet[]>()
+  const setsByExerciseConfig = new Map<number, ApiPlannedSetSource[]>()
   for (const row of setRows) {
     if (row.exerciseConfigId === null) continue
     const sets = setsByExerciseConfig.get(row.exerciseConfigId) ?? []
@@ -224,6 +234,7 @@ export async function getApiProgramPlan(
   const exercisesByRoutine = new Map<number, ApiPlannedExercise[]>()
   for (const row of exercises) {
     if (row.exerciseConfigId === null) continue
+    const timerBased = asBool(row.timerBased)
     const explicitSets = setsByExerciseConfig.get(row.exerciseConfigId) ?? []
     const fallbackSets = Array.from({length: Math.max(row.plannedSets ?? 1, 1)}, () => ({
       id: null,
@@ -232,14 +243,26 @@ export async function getApiProgramPlan(
       timeSeconds: row.plannedTimeSeconds,
       weight: apiWeight(row.plannedWeight, unit),
     }))
-    const sets = row.useIndividualSets === 1 ? capApiIndividualSets(explicitSets, row.plannedSets) : fallbackSets
+    const sourceSets = row.useIndividualSets === 1 ? capApiIndividualSets(explicitSets, row.plannedSets) : fallbackSets
     const routineExercises = exercisesByRoutine.get(row.routineId) ?? []
-    routineExercises.push({
+    const base = {
       exerciseId: row.exerciseId,
       id: row.exerciseConfigId,
       name: formatExerciseDisplayName(row.exerciseName, asBool(row.isUserCreated)),
-      sets,
-    })
+    }
+    if (timerBased) {
+      routineExercises.push({
+        ...base,
+        sets: sourceSets.map((set) => ({...set, ...normalizeTimerBasedSet(true, set, `planned set for exercise configuration ${row.exerciseConfigId}`)})),
+        timerBased: true,
+      })
+    } else {
+      routineExercises.push({
+        ...base,
+        sets: sourceSets.map((set) => ({...set, ...normalizeTimerBasedSet(false, set, `planned set for exercise configuration ${row.exerciseConfigId}`)})),
+        timerBased: false,
+      })
+    }
     exercisesByRoutine.set(row.routineId, routineExercises)
   }
 

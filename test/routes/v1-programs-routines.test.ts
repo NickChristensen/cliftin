@@ -45,9 +45,52 @@ describe('v1 programs and routines routes', () => {
       expect(squat.sets.map((set: {id: null | number}) => set.id)).to.deep.equal([3000, 3001])
       expect(trailingRowExercise.sets.map((set: {id: null | number}) => set.id)).to.deep.equal([3005, 3006])
       expect(defaultSetExercise.sets).to.deep.equal([
-        {id: null, reps: 8, rpe: null, timeSeconds: 120, weight: {unit: 'lb', value: 181.5}},
-        {id: null, reps: 8, rpe: null, timeSeconds: 120, weight: {unit: 'lb', value: 181.5}},
+        {id: null, reps: 8, rpe: null, timeSeconds: null, weight: {unit: 'lb', value: 181.5}},
+        {id: null, reps: 8, rpe: null, timeSeconds: null, weight: {unit: 'lb', value: 181.5}},
       ])
+      expect(defaultSetExercise).to.include({timerBased: false})
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('uses the exercise timer flag to discriminate planned set shapes', async () => {
+    const timerDbPath = createTestDb()
+    const fixtureDb = new Database(timerDbPath)
+    fixtureDb.prepare('insert into ZEXERCISEINFORMATION values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(1004, 'plank', 'core', null, null, 1, 0, 0, 0, 'time', null, null)
+    fixtureDb.prepare('insert into ZEXERCISECONFIGURATION values (?, ?, ?, ?, ?, ?, ?)').run(2006, 1004, 20, 1, null, 45, 0)
+    fixtureDb.prepare('insert into Z_12ROUTINES values (?, ?, ?)').run(2006, 100, 400)
+    fixtureDb.close()
+
+    const app = await createApp(timerDbPath)
+    try {
+      const plan = await app.inject({method: 'GET', url: '/v1/programs/1/plan?unit=kg'})
+      const timerExercise = plan.json().weeks[0].routines[0].exercises.find((exercise: {id: number}) => exercise.id === 2006)
+      const repExercise = plan.json().weeks[0].routines[1].exercises.find((exercise: {id: number}) => exercise.id === 2002)
+
+      expect(plan.statusCode, plan.body).to.equal(200)
+      expect(timerExercise).to.include({timerBased: true})
+      expect(timerExercise.sets).to.deep.equal([{id: null, reps: null, rpe: null, timeSeconds: 45, weight: {unit: 'kg', value: null}}])
+      expect(repExercise).to.include({timerBased: false})
+      expect(repExercise.sets[0]).to.include({reps: 8, timeSeconds: null})
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('rejects timer-based planned sets without a duration as invalid source data', async () => {
+    const invalidDbPath = createTestDb()
+    const fixtureDb = new Database(invalidDbPath)
+    fixtureDb.prepare('insert into ZEXERCISEINFORMATION values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(1004, 'plank', 'core', null, null, 1, 0, 0, 0, 'time', null, null)
+    fixtureDb.prepare('insert into ZEXERCISECONFIGURATION values (?, ?, ?, ?, ?, ?, ?)').run(2006, 1004, null, 1, null, null, 0)
+    fixtureDb.prepare('insert into Z_12ROUTINES values (?, ?, ?)').run(2006, 100, 400)
+    fixtureDb.close()
+
+    const app = await createApp(invalidDbPath)
+    try {
+      const plan = await app.inject({method: 'GET', url: '/v1/programs/1/plan'})
+      expect(plan.statusCode).to.equal(500)
+      expect(plan.json()).to.include({code: 'internal-error'})
     } finally {
       await app.close()
     }

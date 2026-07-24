@@ -19,20 +19,33 @@ export type ApiProgram = {
   name: null | string
 }
 
-export type ApiPlannedSet = {
+type ApiPlannedSetBase = {
   id: null | number
-  reps: null | number
   rpe: null | number
-  timeSeconds: null | number
   weight: ApiWeight
 }
 
-export type ApiPlannedExercise = {
+export type ApiTimerBasedPlannedSet = ApiPlannedSetBase & {
+  reps: null
+  timeSeconds: number
+}
+
+export type ApiRepBasedPlannedSet = ApiPlannedSetBase & {
+  reps: null | number
+  timeSeconds: null
+}
+
+export type ApiPlannedSet = ApiRepBasedPlannedSet | ApiTimerBasedPlannedSet
+
+type ApiPlannedExerciseBase = {
   exerciseId: null | number
   id: number
   name: null | string
-  sets: ApiPlannedSet[]
 }
+
+export type ApiPlannedExercise =
+  | (ApiPlannedExerciseBase & {sets: ApiRepBasedPlannedSet[]; timerBased: false})
+  | (ApiPlannedExerciseBase & {sets: ApiTimerBasedPlannedSet[]; timerBased: true})
 
 export type ApiPlannedRoutine = {
   exercises: ApiPlannedExercise[]

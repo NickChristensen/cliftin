@@ -4,6 +4,7 @@ import {DatabaseSchema} from '../db.js'
 import {formatEquipmentDisplayName, formatMuscleLabel} from '../names.js'
 import {normalizeRpe} from '../rpe.js'
 import {dateRangeToAppleSeconds} from '../time.js'
+import {normalizeTimerBasedSet} from '../timer-based.js'
 export type ApiExerciseMetadataRow = {
   alternativeEnglishNames: string[]
   defaultProgressMetric: null | string
@@ -63,6 +64,7 @@ export type ApiExercisePerformanceRow = {
     volumeKg: number
   }
   workoutId: number
+  timerBased: boolean
 }
 
 export type ApiExercisePerformancePageOptions = {
@@ -284,6 +286,7 @@ function applyPerformanceCursor(
 async function hydrateApiExercisePerformanceRows(
   db: Kysely<DatabaseSchema>,
   rows: ApiExercisePerformanceSourceRow[],
+  timerBased: boolean,
 ): Promise<ApiExercisePerformanceRow[]> {
   const ids = rows.map((row) => row.id)
   const setRows = ids.length === 0 ? [] : await db.selectFrom('ZGYMSETRESULT').select([
@@ -298,17 +301,20 @@ async function hydrateApiExercisePerformanceRows(
     setsByPerformance.set(set.performedExerciseId, sets)
   }
 
-  return rows.map((row) => ({
-    id: row.id,
-    programId: row.programIdDirect ?? row.programIdFromPeriod,
-    programName: row.programNameDirect ?? row.programNameFromPeriod,
-    routineId: row.routineId,
-    routineName: row.routineNameFromResult ?? row.routineNameFromPlan,
-    sets: setsByPerformance.get(row.id) ?? [],
-    startDate: row.startDate,
-    statistics: {setCount: Number(row.setCount), topReps: row.topReps, topWeightKg: row.topWeightKg, totalReps: Number(row.totalReps), volumeKg: Number(row.volumeKg)},
-    workoutId: row.workoutId,
-  }))
+  return rows.map((row) => {
+    const base = {
+      id: row.id,
+      programId: row.programIdDirect ?? row.programIdFromPeriod,
+      programName: row.programNameDirect ?? row.programNameFromPeriod,
+      routineId: row.routineId,
+      routineName: row.routineNameFromResult ?? row.routineNameFromPlan,
+      startDate: row.startDate,
+      statistics: {setCount: Number(row.setCount), topReps: row.topReps, topWeightKg: row.topWeightKg, totalReps: Number(row.totalReps), volumeKg: Number(row.volumeKg)},
+      workoutId: row.workoutId,
+    }
+    if (timerBased) return {...base, sets: (setsByPerformance.get(row.id) ?? []).map((set) => ({...set, ...normalizeTimerBasedSet(true, set, `performed set ${set.id}`)})), timerBased: true}
+    return {...base, sets: (setsByPerformance.get(row.id) ?? []).map((set) => ({...set, ...normalizeTimerBasedSet(false, set, `performed set ${set.id}`)})), timerBased: false}
+  })
 }
 
 export async function getApiExercisePerformancePage(
@@ -316,6 +322,7 @@ export async function getApiExercisePerformancePage(
   exerciseId: number,
   filters: ApiExercisePerformanceFilters,
   options: ApiExercisePerformancePageOptions,
+  timerBased: boolean,
 ): Promise<{hasMore: boolean; rows: ApiExercisePerformanceRow[]}> {
   let query = getApiExercisePerformanceQuery(db, exerciseId, filters)
   if (options.cursor) query = applyPerformanceCursor(query, options.cursor, options.descending)
@@ -327,7 +334,7 @@ export async function getApiExercisePerformancePage(
   const page = rows.slice(0, options.limit)
   return {
     hasMore: rows.length > options.limit,
-    rows: await hydrateApiExercisePerformanceRows(db, page),
+    rows: await hydrateApiExercisePerformanceRows(db, page, timerBased),
   }
 }
 

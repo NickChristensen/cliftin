@@ -53,20 +53,11 @@ function toMetadata(row: NonNullable<Awaited<ReturnType<typeof getApiExerciseMet
 }
 
 function toPerformance(row: ApiExercisePerformanceRow, exerciseId: number, unit: WeightUnit) {
-  return {
+  const base = {
     exerciseId,
     id: row.id,
     program: row.programId === null ? null : {id: row.programId, name: row.programName},
     routine: row.routineId === null ? null : {id: row.routineId, name: row.routineName},
-    sets: row.sets.map((set) => ({
-      id: set.id,
-      isWarmup: set.isWarmup,
-      reps: set.reps,
-      rpe: set.rpe,
-      timeSeconds: set.timeSeconds,
-      volume: {unit, value: convertKgToApiWeight(set.volumeKg, unit)},
-      weight: {unit, value: convertKgToApiWeight(set.weightKg, unit)},
-    })),
     startedAt: appleSecondsToUtcIso(row.startDate),
     statistics: {
       setCount: row.statistics.setCount,
@@ -77,6 +68,8 @@ function toPerformance(row: ApiExercisePerformanceRow, exerciseId: number, unit:
     },
     workoutId: row.workoutId,
   }
+  if (row.timerBased) return {...base, sets: row.sets.map((set) => ({id: set.id, isWarmup: set.isWarmup, reps: null, rpe: set.rpe, timeSeconds: set.timeSeconds!, volume: {unit, value: convertKgToApiWeight(set.volumeKg, unit)}, weight: {unit, value: convertKgToApiWeight(set.weightKg, unit)}})), timerBased: true as const}
+  return {...base, sets: row.sets.map((set) => ({id: set.id, isWarmup: set.isWarmup, reps: set.reps, rpe: set.rpe, timeSeconds: null, volume: {unit, value: convertKgToApiWeight(set.volumeKg, unit)}, weight: {unit, value: convertKgToApiWeight(set.weightKg, unit)}})), timerBased: false as const}
 }
 
 function encodeCursor(row: ApiExercisePerformanceRow, sort: PerformanceSort): string {
@@ -144,7 +137,7 @@ export const exerciseRoutes: FastifyPluginAsyncTypebox = async (app) => {
         cursor,
         descending: sort.startsWith('-'),
         limit,
-      })
+      }, exercise.timerBased)
       const items = rows.map((row) => toPerformance(row, request.params.exerciseId, unit))
       const nextCursor = hasMore && rows.at(-1) ? encodeCursor(rows.at(-1)!, sort) : undefined
       return nextCursor === undefined ? {items} : {items, nextCursor}

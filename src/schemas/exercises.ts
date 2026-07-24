@@ -41,16 +41,21 @@ export const ExerciseListQuerySchema = Type.Object(
   {additionalProperties: false},
 )
 
-export const ExercisePerformanceSetSchema = Type.Object(
-  {
-    id: Type.Integer({minimum: 1}),
-    isWarmup: Type.Boolean(),
-    reps: NullableNumberSchema,
-    rpe: NullableNumberSchema,
-    timeSeconds: NullableNumberSchema,
-    volume: ApiWeightSchema,
-    weight: ApiWeightSchema,
-  },
+const ExercisePerformanceSetBaseSchema = {
+  id: Type.Integer({minimum: 1}),
+  isWarmup: Type.Boolean(),
+  rpe: NullableNumberSchema,
+  volume: ApiWeightSchema,
+  weight: ApiWeightSchema,
+}
+
+export const TimerBasedExercisePerformanceSetSchema = Type.Object(
+  {...ExercisePerformanceSetBaseSchema, reps: Type.Null(), timeSeconds: Type.Number()},
+  {additionalProperties: false},
+)
+
+export const RepBasedExercisePerformanceSetSchema = Type.Object(
+  {...ExercisePerformanceSetBaseSchema, reps: NullableNumberSchema, timeSeconds: Type.Null()},
   {additionalProperties: false},
 )
 
@@ -65,19 +70,20 @@ export const ExercisePerformanceStatisticsSchema = Type.Object(
   {additionalProperties: false},
 )
 
-export const ExercisePerformanceSchema = Type.Object(
-  {
-    exerciseId: Type.Integer({description: 'Exercise-definition primary key.', minimum: 1}),
-    id: Type.Integer({description: 'Performed exercise-result primary key.', minimum: 1}),
-    program: Type.Union([WorkoutReferenceSchema, Type.Null()]),
-    routine: Type.Union([WorkoutReferenceSchema, Type.Null()]),
-    sets: Type.Array(ExercisePerformanceSetSchema),
-    startedAt: Type.Union([Type.String({format: 'date-time'}), Type.Null()]),
-    statistics: ExercisePerformanceStatisticsSchema,
-    workoutId: Type.Integer({minimum: 1}),
-  },
-  {additionalProperties: false},
-)
+const ExercisePerformanceBaseSchema = {
+  exerciseId: Type.Integer({description: 'Exercise-definition primary key.', minimum: 1}),
+  id: Type.Integer({description: 'Performed exercise-result primary key.', minimum: 1}),
+  program: Type.Union([WorkoutReferenceSchema, Type.Null()]),
+  routine: Type.Union([WorkoutReferenceSchema, Type.Null()]),
+  startedAt: Type.Union([Type.String({format: 'date-time'}), Type.Null()]),
+  statistics: ExercisePerformanceStatisticsSchema,
+  workoutId: Type.Integer({minimum: 1}),
+}
+
+export const ExercisePerformanceSchema = Type.Union([
+  Type.Object({...ExercisePerformanceBaseSchema, sets: Type.Array(TimerBasedExercisePerformanceSetSchema), timerBased: Type.Literal(true)}, {additionalProperties: false}),
+  Type.Object({...ExercisePerformanceBaseSchema, sets: Type.Array(RepBasedExercisePerformanceSetSchema), timerBased: Type.Literal(false)}, {additionalProperties: false}),
+])
 
 export const ExerciseStatisticsSchema = Type.Object(
   {

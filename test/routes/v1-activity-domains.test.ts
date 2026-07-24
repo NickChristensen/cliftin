@@ -93,6 +93,39 @@ describe('v1 activity workout and exercise routes', () => {
     }
   })
 
+  it('uses the exercise timer flag to discriminate performed workout and performance set shapes', async () => {
+    const timerDbPath = createTestDb()
+    const fixtureDb = new Database(timerDbPath)
+    fixtureDb.prepare('insert into ZEXERCISEINFORMATION values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(1004, 'plank', 'core', null, null, 1, 0, 0, 0, 'time', null, null)
+    fixtureDb.prepare('insert into ZEXERCISERESULT values (?, ?, ?, ?, ?)').run(5009, 4001, null, 1004, 400)
+    fixtureDb.prepare('insert into ZGYMSETRESULT values (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(6006, 5009, 100, 12, null, null, null, 45, 0)
+    fixtureDb.prepare('update ZGYMSETRESULT set ZTIME = ? where Z_PK = ?').run(120, 6002)
+    fixtureDb.close()
+
+    const app = await createApp(timerDbPath)
+    try {
+      const workout = await app.inject({method: 'GET', url: '/v1/workouts/4001?unit=kg'})
+      const timerPerformance = await app.inject({method: 'GET', url: '/v1/exercises/1004/performances?unit=kg'})
+      const repPerformance = await app.inject({method: 'GET', url: '/v1/exercises/1000/performances?unit=kg'})
+      const timerExercise = workout.json().exercises.find((exercise: {exerciseId: number}) => exercise.exerciseId === 1004)
+      const repExercise = workout.json().exercises.find((exercise: {exerciseId: number}) => exercise.exerciseId === 1000)
+
+      expect(workout.statusCode, workout.body).to.equal(200)
+      expect(timerExercise).to.include({timerBased: true})
+      expect(timerExercise.sets[0]).to.include({reps: null, timeSeconds: 45})
+      expect(repExercise).to.include({timerBased: false})
+      expect(repExercise.sets[0]).to.include({reps: 6, timeSeconds: null})
+      expect(timerPerformance.statusCode, timerPerformance.body).to.equal(200)
+      expect(timerPerformance.json().items[0]).to.include({timerBased: true})
+      expect(timerPerformance.json().items[0].sets[0]).to.include({reps: null, timeSeconds: 45})
+      expect(repPerformance.statusCode, repPerformance.body).to.equal(200)
+      expect(repPerformance.json().items[0]).to.include({timerBased: false})
+      expect(repPerformance.json().items[0].sets[0]).to.include({reps: 6, timeSeconds: null})
+    } finally {
+      await app.close()
+    }
+  })
+
   it('preserves source foreign keys when historical workout targets are missing', async () => {
     const historicalDbPath = createTestDb()
     const fixtureDb = new Database(historicalDbPath)

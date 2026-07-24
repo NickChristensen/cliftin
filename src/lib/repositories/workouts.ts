@@ -3,6 +3,7 @@ import {Kysely} from 'kysely'
 import {DatabaseSchema} from '../db.js'
 import {normalizeRpe} from '../rpe.js'
 import {dateRangeToAppleSeconds} from '../time.js'
+import {normalizeTimerBasedSet} from '../timer-based.js'
 
 export type ApiWorkoutListFilters = {
   from?: string
@@ -38,6 +39,7 @@ export type ApiPerformedExerciseRow = {
   isUserCreated: boolean
   name: null | string
   sets: ApiPerformedSetRow[]
+  timerBased: boolean
 }
 
 export type ApiWorkoutDetailRow = ApiWorkoutListRow & {
@@ -123,7 +125,7 @@ export async function getApiWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId:
   const exerciseRows = await db
     .selectFrom('ZEXERCISERESULT as er')
     .leftJoin('ZEXERCISEINFORMATION as ei', 'ei.Z_PK', 'er.ZEXERCISE')
-    .select(['er.Z_PK as id', 'er.ZEXERCISE as exerciseId', 'ei.ZNAME as name', 'ei.ZISUSERCREATED as isUserCreated'])
+    .select(['er.Z_PK as id', 'er.ZEXERCISE as exerciseId', 'ei.ZNAME as name', 'ei.ZISUSERCREATED as isUserCreated', 'ei.ZTIMERBASED as timerBased'])
     .where('er.ZWORKOUT', '=', workoutId)
     .orderBy('er.Z_FOK_WORKOUT', 'asc')
     .orderBy('er.Z_PK', 'asc')
@@ -143,7 +145,17 @@ export async function getApiWorkoutDetail(db: Kysely<DatabaseSchema>, workoutId:
 
   return {
     durationSeconds: detail.durationSeconds,
-    exercises: exerciseRows.map((row) => ({exerciseId: row.exerciseId, id: row.id, isUserCreated: asBool(row.isUserCreated), name: row.name, sets: setsByExercise.get(row.id) ?? []})),
+    exercises: exerciseRows.map((row) => {
+      const timerBased = asBool(row.timerBased)
+      const base = {
+        exerciseId: row.exerciseId,
+        id: row.id,
+        isUserCreated: asBool(row.isUserCreated),
+        name: row.name,
+      }
+      if (timerBased) return {...base, sets: (setsByExercise.get(row.id) ?? []).map((set) => ({...set, ...normalizeTimerBasedSet(true, set, `performed set ${set.id}`)})), timerBased: true}
+      return {...base, sets: (setsByExercise.get(row.id) ?? []).map((set) => ({...set, ...normalizeTimerBasedSet(false, set, `performed set ${set.id}`)})), timerBased: false}
+    }),
     id: detail.id,
     programId: detail.programIdDirect ?? detail.programIdFromPeriod,
     programName: detail.programNameDirect ?? detail.programNameFromPeriod,

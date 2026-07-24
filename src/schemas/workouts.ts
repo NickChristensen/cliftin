@@ -13,28 +13,34 @@ export const WeightUnitSchema = Type.Union([Type.Literal('lb'), Type.Literal('kg
 
 export const ApiWeightSchema = Type.Object({unit: WeightUnitSchema, value: NullableNumberSchema}, {additionalProperties: false})
 
-export const WorkoutSetSchema = Type.Object(
-  {
-    id: Type.Integer({minimum: 1}),
-    isWarmup: Type.Boolean({description: 'Always present, including when false.'}),
-    reps: NullableNumberSchema,
-    rpe: NullableNumberSchema,
-    timeSeconds: NullableNumberSchema,
-    volume: ApiWeightSchema,
-    weight: ApiWeightSchema,
-  },
+const WorkoutSetBaseSchema = {
+  id: Type.Integer({minimum: 1}),
+  isWarmup: Type.Boolean({description: 'Always present, including when false.'}),
+  rpe: NullableNumberSchema,
+  volume: ApiWeightSchema,
+  weight: ApiWeightSchema,
+}
+
+export const TimerBasedWorkoutSetSchema = Type.Object(
+  {...WorkoutSetBaseSchema, reps: Type.Null(), timeSeconds: Type.Number()},
   {additionalProperties: false},
 )
 
-export const PerformedExerciseSchema = Type.Object(
-  {
-    exerciseId: Type.Union([Type.Integer({description: 'Exercise-definition primary key.', minimum: 1}), Type.Null()]),
-    id: Type.Integer({description: 'Performed exercise-result primary key.', minimum: 1}),
-    name: NullableStringSchema,
-    sets: Type.Array(WorkoutSetSchema),
-  },
+export const RepBasedWorkoutSetSchema = Type.Object(
+  {...WorkoutSetBaseSchema, reps: NullableNumberSchema, timeSeconds: Type.Null()},
   {additionalProperties: false},
 )
+
+const PerformedExerciseBaseSchema = {
+  exerciseId: Type.Union([Type.Integer({description: 'Exercise-definition primary key.', minimum: 1}), Type.Null()]),
+  id: Type.Integer({description: 'Performed exercise-result primary key.', minimum: 1}),
+  name: NullableStringSchema,
+}
+
+export const PerformedExerciseSchema = Type.Union([
+  Type.Object({...PerformedExerciseBaseSchema, sets: Type.Array(TimerBasedWorkoutSetSchema), timerBased: Type.Literal(true)}, {additionalProperties: false}),
+  Type.Object({...PerformedExerciseBaseSchema, sets: Type.Array(RepBasedWorkoutSetSchema), timerBased: Type.Literal(false)}, {additionalProperties: false}),
+])
 
 export const WorkoutReferenceSchema = Type.Object(
   {id: Type.Integer({minimum: 1}), name: NullableStringSchema},

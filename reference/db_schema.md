@@ -64,6 +64,7 @@ ZWORKOUTPLAN (Program)
   `16` is effectively the default/unspecified value and is normalized to `null` in API output.
 - `ZEXERCISECONFIGURATION.ZUSEINDIVIDUALSETS` controls planned-set source of truth:
   when it is `1`, use related `ZSETCONFIGURATION` rows ordered by `ZSETINDEX`, but cap the result to the positive `ZSETS` count. Do not synthesize missing child rows when fewer remain after edits. Otherwise, ignore any child rows and synthesize the planned sets from `ZSETS`, `ZREPS`, `ZWEIGHT`, and `ZTIME`.
+- `ZEXERCISEINFORMATION.ZTIMERBASED` is the authoritative exercise-mode flag. The API uses it to discriminate exercise set shapes: timer-based exercises expose `reps: null` and a required `timeSeconds`, while rep-based exercises preserve `reps` and expose `timeSeconds: null`. Do not infer mode from the overloaded `ZREPS` or `ZTIME` values; in particular, rep-based planned configurations may retain a default `ZTIME` such as `120`.
 - Weight storage and display units differ:
   planned and logged weight values are stored in kg even when the Liftin setting is imperial.
   The HTTP API defaults to lb and supports a `unit=kg` override; its intentionally Liftin-specific conversion is `kg * 2.2`.

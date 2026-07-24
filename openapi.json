@@ -670,108 +670,56 @@
                         "exercises": {
                           "type": "array",
                           "items": {
-                            "additionalProperties": false,
-                            "type": "object",
-                            "properties": {
-                              "exerciseId": {
-                                "anyOf": [
-                                  {
-                                    "description": "Exercise definition primary key.",
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "exerciseId": {
+                                    "anyOf": [
+                                      {
+                                        "description": "Exercise definition primary key.",
+                                        "minimum": 1,
+                                        "type": "integer"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "id": {
+                                    "description": "Exercise configuration primary key.",
                                     "minimum": 1,
                                     "type": "integer"
                                   },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
-                              },
-                              "id": {
-                                "description": "Exercise configuration primary key.",
-                                "minimum": 1,
-                                "type": "integer"
-                              },
-                              "name": {
-                                "anyOf": [
-                                  {
-                                    "type": "string"
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
-                              },
-                              "sets": {
-                                "type": "array",
-                                "items": {
-                                  "additionalProperties": false,
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "anyOf": [
-                                        {
-                                          "minimum": 1,
-                                          "type": "integer"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    },
-                                    "reps": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    },
-                                    "rpe": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    },
-                                    "timeSeconds": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    },
-                                    "weight": {
+                                  "sets": {
+                                    "type": "array",
+                                    "items": {
                                       "additionalProperties": false,
                                       "type": "object",
                                       "properties": {
-                                        "unit": {
-                                          "description": "Weight display unit. Defaults to lb where applicable.",
-                                          "examples": [
-                                            "lb"
-                                          ],
+                                        "id": {
                                           "anyOf": [
                                             {
-                                              "type": "string",
-                                              "enum": [
-                                                "lb"
-                                              ]
+                                              "minimum": 1,
+                                              "type": "integer"
                                             },
                                             {
-                                              "type": "string",
-                                              "enum": [
-                                                "kg"
-                                              ]
+                                              "type": "null"
                                             }
                                           ]
                                         },
-                                        "value": {
+                                        "rpe": {
                                           "anyOf": [
                                             {
                                               "type": "number"
@@ -780,29 +728,214 @@
                                               "type": "null"
                                             }
                                           ]
+                                        },
+                                        "weight": {
+                                          "additionalProperties": false,
+                                          "type": "object",
+                                          "properties": {
+                                            "unit": {
+                                              "description": "Weight display unit. Defaults to lb where applicable.",
+                                              "examples": [
+                                                "lb"
+                                              ],
+                                              "anyOf": [
+                                                {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "lb"
+                                                  ]
+                                                },
+                                                {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "kg"
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            "value": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "unit",
+                                            "value"
+                                          ]
+                                        },
+                                        "reps": {
+                                          "type": "null"
+                                        },
+                                        "timeSeconds": {
+                                          "type": "number"
                                         }
                                       },
                                       "required": [
-                                        "unit",
-                                        "value"
+                                        "id",
+                                        "rpe",
+                                        "weight",
+                                        "reps",
+                                        "timeSeconds"
                                       ]
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "reps",
-                                    "rpe",
-                                    "timeSeconds",
-                                    "weight"
-                                  ]
-                                }
+                                  "timerBased": {
+                                    "type": "boolean",
+                                    "enum": [
+                                      true
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "exerciseId",
+                                  "id",
+                                  "name",
+                                  "sets",
+                                  "timerBased"
+                                ]
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "exerciseId": {
+                                    "anyOf": [
+                                      {
+                                        "description": "Exercise definition primary key.",
+                                        "minimum": 1,
+                                        "type": "integer"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "id": {
+                                    "description": "Exercise configuration primary key.",
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "sets": {
+                                    "type": "array",
+                                    "items": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "anyOf": [
+                                            {
+                                              "minimum": 1,
+                                              "type": "integer"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "rpe": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "weight": {
+                                          "additionalProperties": false,
+                                          "type": "object",
+                                          "properties": {
+                                            "unit": {
+                                              "description": "Weight display unit. Defaults to lb where applicable.",
+                                              "examples": [
+                                                "lb"
+                                              ],
+                                              "anyOf": [
+                                                {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "lb"
+                                                  ]
+                                                },
+                                                {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "kg"
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            "value": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "unit",
+                                            "value"
+                                          ]
+                                        },
+                                        "reps": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "timeSeconds": {
+                                          "type": "null"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "rpe",
+                                        "weight",
+                                        "reps",
+                                        "timeSeconds"
+                                      ]
+                                    }
+                                  },
+                                  "timerBased": {
+                                    "type": "boolean",
+                                    "enum": [
+                                      false
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "exerciseId",
+                                  "id",
+                                  "name",
+                                  "sets",
+                                  "timerBased"
+                                ]
                               }
-                            },
-                            "required": [
-                              "exerciseId",
-                              "id",
-                              "name",
-                              "sets"
                             ]
                           }
                         }
@@ -1122,106 +1255,56 @@
                                 "exercises": {
                                   "type": "array",
                                   "items": {
-                                    "additionalProperties": false,
-                                    "type": "object",
-                                    "properties": {
-                                      "exerciseId": {
-                                        "anyOf": [
-                                          {
-                                            "description": "Exercise definition primary key.",
+                                    "anyOf": [
+                                      {
+                                        "additionalProperties": false,
+                                        "type": "object",
+                                        "properties": {
+                                          "exerciseId": {
+                                            "anyOf": [
+                                              {
+                                                "description": "Exercise definition primary key.",
+                                                "minimum": 1,
+                                                "type": "integer"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          },
+                                          "id": {
+                                            "description": "Exercise configuration primary key.",
                                             "minimum": 1,
                                             "type": "integer"
                                           },
-                                          {
-                                            "type": "null"
-                                          }
-                                        ]
-                                      },
-                                      "id": {
-                                        "description": "Exercise configuration primary key.",
-                                        "minimum": 1,
-                                        "type": "integer"
-                                      },
-                                      "name": {
-                                        "anyOf": [
-                                          {
-                                            "type": "string"
+                                          "name": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
                                           },
-                                          {
-                                            "type": "null"
-                                          }
-                                        ]
-                                      },
-                                      "sets": {
-                                        "type": "array",
-                                        "items": {
-                                          "additionalProperties": false,
-                                          "type": "object",
-                                          "properties": {
-                                            "id": {
-                                              "anyOf": [
-                                                {
-                                                  "minimum": 1,
-                                                  "type": "integer"
-                                                },
-                                                {
-                                                  "type": "null"
-                                                }
-                                              ]
-                                            },
-                                            "reps": {
-                                              "anyOf": [
-                                                {
-                                                  "type": "number"
-                                                },
-                                                {
-                                                  "type": "null"
-                                                }
-                                              ]
-                                            },
-                                            "rpe": {
-                                              "anyOf": [
-                                                {
-                                                  "type": "number"
-                                                },
-                                                {
-                                                  "type": "null"
-                                                }
-                                              ]
-                                            },
-                                            "timeSeconds": {
-                                              "anyOf": [
-                                                {
-                                                  "type": "number"
-                                                },
-                                                {
-                                                  "type": "null"
-                                                }
-                                              ]
-                                            },
-                                            "weight": {
+                                          "sets": {
+                                            "type": "array",
+                                            "items": {
                                               "additionalProperties": false,
                                               "type": "object",
                                               "properties": {
-                                                "unit": {
-                                                  "description": "Weight display unit. Defaults to lb where applicable.",
+                                                "id": {
                                                   "anyOf": [
                                                     {
-                                                      "type": "string",
-                                                      "enum": [
-                                                        "lb"
-                                                      ]
+                                                      "minimum": 1,
+                                                      "type": "integer"
                                                     },
                                                     {
-                                                      "type": "string",
-                                                      "enum": [
-                                                        "kg"
-                                                      ]
+                                                      "type": "null"
                                                     }
-                                                  ],
-                                                  "example": "lb"
+                                                  ]
                                                 },
-                                                "value": {
+                                                "rpe": {
                                                   "anyOf": [
                                                     {
                                                       "type": "number"
@@ -1230,29 +1313,214 @@
                                                       "type": "null"
                                                     }
                                                   ]
+                                                },
+                                                "weight": {
+                                                  "additionalProperties": false,
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "unit": {
+                                                      "description": "Weight display unit. Defaults to lb where applicable.",
+                                                      "examples": [
+                                                        "lb"
+                                                      ],
+                                                      "anyOf": [
+                                                        {
+                                                          "type": "string",
+                                                          "enum": [
+                                                            "lb"
+                                                          ]
+                                                        },
+                                                        {
+                                                          "type": "string",
+                                                          "enum": [
+                                                            "kg"
+                                                          ]
+                                                        }
+                                                      ]
+                                                    },
+                                                    "value": {
+                                                      "anyOf": [
+                                                        {
+                                                          "type": "number"
+                                                        },
+                                                        {
+                                                          "type": "null"
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "unit",
+                                                    "value"
+                                                  ]
+                                                },
+                                                "reps": {
+                                                  "type": "null"
+                                                },
+                                                "timeSeconds": {
+                                                  "type": "number"
                                                 }
                                               },
                                               "required": [
-                                                "unit",
-                                                "value"
+                                                "id",
+                                                "rpe",
+                                                "weight",
+                                                "reps",
+                                                "timeSeconds"
                                               ]
                                             }
                                           },
-                                          "required": [
-                                            "id",
-                                            "reps",
-                                            "rpe",
-                                            "timeSeconds",
-                                            "weight"
-                                          ]
-                                        }
+                                          "timerBased": {
+                                            "type": "boolean",
+                                            "enum": [
+                                              true
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "exerciseId",
+                                          "id",
+                                          "name",
+                                          "sets",
+                                          "timerBased"
+                                        ]
+                                      },
+                                      {
+                                        "additionalProperties": false,
+                                        "type": "object",
+                                        "properties": {
+                                          "exerciseId": {
+                                            "anyOf": [
+                                              {
+                                                "description": "Exercise definition primary key.",
+                                                "minimum": 1,
+                                                "type": "integer"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          },
+                                          "id": {
+                                            "description": "Exercise configuration primary key.",
+                                            "minimum": 1,
+                                            "type": "integer"
+                                          },
+                                          "name": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          },
+                                          "sets": {
+                                            "type": "array",
+                                            "items": {
+                                              "additionalProperties": false,
+                                              "type": "object",
+                                              "properties": {
+                                                "id": {
+                                                  "anyOf": [
+                                                    {
+                                                      "minimum": 1,
+                                                      "type": "integer"
+                                                    },
+                                                    {
+                                                      "type": "null"
+                                                    }
+                                                  ]
+                                                },
+                                                "rpe": {
+                                                  "anyOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "null"
+                                                    }
+                                                  ]
+                                                },
+                                                "weight": {
+                                                  "additionalProperties": false,
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "unit": {
+                                                      "description": "Weight display unit. Defaults to lb where applicable.",
+                                                      "examples": [
+                                                        "lb"
+                                                      ],
+                                                      "anyOf": [
+                                                        {
+                                                          "type": "string",
+                                                          "enum": [
+                                                            "lb"
+                                                          ]
+                                                        },
+                                                        {
+                                                          "type": "string",
+                                                          "enum": [
+                                                            "kg"
+                                                          ]
+                                                        }
+                                                      ]
+                                                    },
+                                                    "value": {
+                                                      "anyOf": [
+                                                        {
+                                                          "type": "number"
+                                                        },
+                                                        {
+                                                          "type": "null"
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "unit",
+                                                    "value"
+                                                  ]
+                                                },
+                                                "reps": {
+                                                  "anyOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "null"
+                                                    }
+                                                  ]
+                                                },
+                                                "timeSeconds": {
+                                                  "type": "null"
+                                                }
+                                              },
+                                              "required": [
+                                                "id",
+                                                "rpe",
+                                                "weight",
+                                                "reps",
+                                                "timeSeconds"
+                                              ]
+                                            }
+                                          },
+                                          "timerBased": {
+                                            "type": "boolean",
+                                            "enum": [
+                                              false
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "exerciseId",
+                                          "id",
+                                          "name",
+                                          "sets",
+                                          "timerBased"
+                                        ]
                                       }
-                                    },
-                                    "required": [
-                                      "exerciseId",
-                                      "id",
-                                      "name",
-                                      "sets"
                                     ]
                                   }
                                 },
@@ -1802,108 +2070,56 @@
                         "exercises": {
                           "type": "array",
                           "items": {
-                            "additionalProperties": false,
-                            "type": "object",
-                            "properties": {
-                              "exerciseId": {
-                                "anyOf": [
-                                  {
-                                    "description": "Exercise definition primary key.",
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "exerciseId": {
+                                    "anyOf": [
+                                      {
+                                        "description": "Exercise definition primary key.",
+                                        "minimum": 1,
+                                        "type": "integer"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "id": {
+                                    "description": "Exercise configuration primary key.",
                                     "minimum": 1,
                                     "type": "integer"
                                   },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
-                              },
-                              "id": {
-                                "description": "Exercise configuration primary key.",
-                                "minimum": 1,
-                                "type": "integer"
-                              },
-                              "name": {
-                                "anyOf": [
-                                  {
-                                    "type": "string"
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
-                              },
-                              "sets": {
-                                "type": "array",
-                                "items": {
-                                  "additionalProperties": false,
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "anyOf": [
-                                        {
-                                          "minimum": 1,
-                                          "type": "integer"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    },
-                                    "reps": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    },
-                                    "rpe": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    },
-                                    "timeSeconds": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    },
-                                    "weight": {
+                                  "sets": {
+                                    "type": "array",
+                                    "items": {
                                       "additionalProperties": false,
                                       "type": "object",
                                       "properties": {
-                                        "unit": {
-                                          "description": "Weight display unit. Defaults to lb where applicable.",
-                                          "examples": [
-                                            "lb"
-                                          ],
+                                        "id": {
                                           "anyOf": [
                                             {
-                                              "type": "string",
-                                              "enum": [
-                                                "lb"
-                                              ]
+                                              "minimum": 1,
+                                              "type": "integer"
                                             },
                                             {
-                                              "type": "string",
-                                              "enum": [
-                                                "kg"
-                                              ]
+                                              "type": "null"
                                             }
                                           ]
                                         },
-                                        "value": {
+                                        "rpe": {
                                           "anyOf": [
                                             {
                                               "type": "number"
@@ -1912,29 +2128,214 @@
                                               "type": "null"
                                             }
                                           ]
+                                        },
+                                        "weight": {
+                                          "additionalProperties": false,
+                                          "type": "object",
+                                          "properties": {
+                                            "unit": {
+                                              "description": "Weight display unit. Defaults to lb where applicable.",
+                                              "examples": [
+                                                "lb"
+                                              ],
+                                              "anyOf": [
+                                                {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "lb"
+                                                  ]
+                                                },
+                                                {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "kg"
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            "value": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "unit",
+                                            "value"
+                                          ]
+                                        },
+                                        "reps": {
+                                          "type": "null"
+                                        },
+                                        "timeSeconds": {
+                                          "type": "number"
                                         }
                                       },
                                       "required": [
-                                        "unit",
-                                        "value"
+                                        "id",
+                                        "rpe",
+                                        "weight",
+                                        "reps",
+                                        "timeSeconds"
                                       ]
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "reps",
-                                    "rpe",
-                                    "timeSeconds",
-                                    "weight"
-                                  ]
-                                }
+                                  "timerBased": {
+                                    "type": "boolean",
+                                    "enum": [
+                                      true
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "exerciseId",
+                                  "id",
+                                  "name",
+                                  "sets",
+                                  "timerBased"
+                                ]
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "exerciseId": {
+                                    "anyOf": [
+                                      {
+                                        "description": "Exercise definition primary key.",
+                                        "minimum": 1,
+                                        "type": "integer"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "id": {
+                                    "description": "Exercise configuration primary key.",
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "sets": {
+                                    "type": "array",
+                                    "items": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "anyOf": [
+                                            {
+                                              "minimum": 1,
+                                              "type": "integer"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "rpe": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "weight": {
+                                          "additionalProperties": false,
+                                          "type": "object",
+                                          "properties": {
+                                            "unit": {
+                                              "description": "Weight display unit. Defaults to lb where applicable.",
+                                              "examples": [
+                                                "lb"
+                                              ],
+                                              "anyOf": [
+                                                {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "lb"
+                                                  ]
+                                                },
+                                                {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "kg"
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            "value": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "unit",
+                                            "value"
+                                          ]
+                                        },
+                                        "reps": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "timeSeconds": {
+                                          "type": "null"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "rpe",
+                                        "weight",
+                                        "reps",
+                                        "timeSeconds"
+                                      ]
+                                    }
+                                  },
+                                  "timerBased": {
+                                    "type": "boolean",
+                                    "enum": [
+                                      false
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "exerciseId",
+                                  "id",
+                                  "name",
+                                  "sets",
+                                  "timerBased"
+                                ]
                               }
-                            },
-                            "required": [
-                              "exerciseId",
-                              "id",
-                              "name",
-                              "sets"
                             ]
                           }
                         }
@@ -2452,103 +2853,53 @@
                     "exercises": {
                       "type": "array",
                       "items": {
-                        "additionalProperties": false,
-                        "type": "object",
-                        "properties": {
-                          "exerciseId": {
-                            "anyOf": [
-                              {
-                                "description": "Exercise-definition primary key.",
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "exerciseId": {
+                                "anyOf": [
+                                  {
+                                    "description": "Exercise-definition primary key.",
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "id": {
+                                "description": "Performed exercise-result primary key.",
                                 "minimum": 1,
                                 "type": "integer"
                               },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "id": {
-                            "description": "Performed exercise-result primary key.",
-                            "minimum": 1,
-                            "type": "integer"
-                          },
-                          "name": {
-                            "anyOf": [
-                              {
-                                "type": "string"
+                              "name": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
                               },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "sets": {
-                            "type": "array",
-                            "items": {
-                              "additionalProperties": false,
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "minimum": 1,
-                                  "type": "integer"
-                                },
-                                "isWarmup": {
-                                  "description": "Always present, including when false.",
-                                  "type": "boolean"
-                                },
-                                "reps": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "rpe": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "timeSeconds": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "volume": {
+                              "sets": {
+                                "type": "array",
+                                "items": {
                                   "additionalProperties": false,
                                   "type": "object",
                                   "properties": {
-                                    "unit": {
-                                      "description": "Weight display unit. Defaults to lb.",
-                                      "anyOf": [
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "lb"
-                                          ]
-                                        },
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "kg"
-                                          ]
-                                        }
-                                      ],
-                                      "example": "lb"
+                                    "id": {
+                                      "minimum": 1,
+                                      "type": "integer"
                                     },
-                                    "value": {
+                                    "isWarmup": {
+                                      "description": "Always present, including when false.",
+                                      "type": "boolean"
+                                    },
+                                    "rpe": {
                                       "anyOf": [
                                         {
                                           "type": "number"
@@ -2557,69 +2908,295 @@
                                           "type": "null"
                                         }
                                       ]
-                                    }
-                                  },
-                                  "required": [
-                                    "unit",
-                                    "value"
-                                  ]
-                                },
-                                "weight": {
-                                  "additionalProperties": false,
-                                  "type": "object",
-                                  "properties": {
-                                    "unit": {
-                                      "description": "Weight display unit. Defaults to lb.",
-                                      "anyOf": [
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "lb"
-                                          ]
-                                        },
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "kg"
-                                          ]
-                                        }
-                                      ],
-                                      "example": "lb"
                                     },
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
+                                    "volume": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
                                         },
-                                        {
-                                          "type": "null"
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
                                         }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
                                       ]
+                                    },
+                                    "weight": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "reps": {
+                                      "type": "null"
+                                    },
+                                    "timeSeconds": {
+                                      "type": "number"
                                     }
                                   },
                                   "required": [
-                                    "unit",
-                                    "value"
+                                    "id",
+                                    "isWarmup",
+                                    "rpe",
+                                    "volume",
+                                    "weight",
+                                    "reps",
+                                    "timeSeconds"
                                   ]
                                 }
                               },
-                              "required": [
-                                "id",
-                                "isWarmup",
-                                "reps",
-                                "rpe",
-                                "timeSeconds",
-                                "volume",
-                                "weight"
-                              ]
-                            }
+                              "timerBased": {
+                                "type": "boolean",
+                                "enum": [
+                                  true
+                                ]
+                              }
+                            },
+                            "required": [
+                              "exerciseId",
+                              "id",
+                              "name",
+                              "sets",
+                              "timerBased"
+                            ]
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "exerciseId": {
+                                "anyOf": [
+                                  {
+                                    "description": "Exercise-definition primary key.",
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "id": {
+                                "description": "Performed exercise-result primary key.",
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "name": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "sets": {
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "minimum": 1,
+                                      "type": "integer"
+                                    },
+                                    "isWarmup": {
+                                      "description": "Always present, including when false.",
+                                      "type": "boolean"
+                                    },
+                                    "rpe": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "volume": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "weight": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "reps": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "timeSeconds": {
+                                      "type": "null"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "isWarmup",
+                                    "rpe",
+                                    "volume",
+                                    "weight",
+                                    "reps",
+                                    "timeSeconds"
+                                  ]
+                                }
+                              },
+                              "timerBased": {
+                                "type": "boolean",
+                                "enum": [
+                                  false
+                                ]
+                              }
+                            },
+                            "required": [
+                              "exerciseId",
+                              "id",
+                              "name",
+                              "sets",
+                              "timerBased"
+                            ]
                           }
-                        },
-                        "required": [
-                          "exerciseId",
-                          "id",
-                          "name",
-                          "sets"
                         ]
                       }
                     }
@@ -2831,103 +3408,53 @@
                     "exercises": {
                       "type": "array",
                       "items": {
-                        "additionalProperties": false,
-                        "type": "object",
-                        "properties": {
-                          "exerciseId": {
-                            "anyOf": [
-                              {
-                                "description": "Exercise-definition primary key.",
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "exerciseId": {
+                                "anyOf": [
+                                  {
+                                    "description": "Exercise-definition primary key.",
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "id": {
+                                "description": "Performed exercise-result primary key.",
                                 "minimum": 1,
                                 "type": "integer"
                               },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "id": {
-                            "description": "Performed exercise-result primary key.",
-                            "minimum": 1,
-                            "type": "integer"
-                          },
-                          "name": {
-                            "anyOf": [
-                              {
-                                "type": "string"
+                              "name": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
                               },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "sets": {
-                            "type": "array",
-                            "items": {
-                              "additionalProperties": false,
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "minimum": 1,
-                                  "type": "integer"
-                                },
-                                "isWarmup": {
-                                  "description": "Always present, including when false.",
-                                  "type": "boolean"
-                                },
-                                "reps": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "rpe": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "timeSeconds": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "volume": {
+                              "sets": {
+                                "type": "array",
+                                "items": {
                                   "additionalProperties": false,
                                   "type": "object",
                                   "properties": {
-                                    "unit": {
-                                      "description": "Weight display unit. Defaults to lb.",
-                                      "anyOf": [
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "lb"
-                                          ]
-                                        },
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "kg"
-                                          ]
-                                        }
-                                      ],
-                                      "example": "lb"
+                                    "id": {
+                                      "minimum": 1,
+                                      "type": "integer"
                                     },
-                                    "value": {
+                                    "isWarmup": {
+                                      "description": "Always present, including when false.",
+                                      "type": "boolean"
+                                    },
+                                    "rpe": {
                                       "anyOf": [
                                         {
                                           "type": "number"
@@ -2936,69 +3463,295 @@
                                           "type": "null"
                                         }
                                       ]
-                                    }
-                                  },
-                                  "required": [
-                                    "unit",
-                                    "value"
-                                  ]
-                                },
-                                "weight": {
-                                  "additionalProperties": false,
-                                  "type": "object",
-                                  "properties": {
-                                    "unit": {
-                                      "description": "Weight display unit. Defaults to lb.",
-                                      "anyOf": [
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "lb"
-                                          ]
-                                        },
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "kg"
-                                          ]
-                                        }
-                                      ],
-                                      "example": "lb"
                                     },
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
+                                    "volume": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
                                         },
-                                        {
-                                          "type": "null"
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
                                         }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
                                       ]
+                                    },
+                                    "weight": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "reps": {
+                                      "type": "null"
+                                    },
+                                    "timeSeconds": {
+                                      "type": "number"
                                     }
                                   },
                                   "required": [
-                                    "unit",
-                                    "value"
+                                    "id",
+                                    "isWarmup",
+                                    "rpe",
+                                    "volume",
+                                    "weight",
+                                    "reps",
+                                    "timeSeconds"
                                   ]
                                 }
                               },
-                              "required": [
-                                "id",
-                                "isWarmup",
-                                "reps",
-                                "rpe",
-                                "timeSeconds",
-                                "volume",
-                                "weight"
-                              ]
-                            }
+                              "timerBased": {
+                                "type": "boolean",
+                                "enum": [
+                                  true
+                                ]
+                              }
+                            },
+                            "required": [
+                              "exerciseId",
+                              "id",
+                              "name",
+                              "sets",
+                              "timerBased"
+                            ]
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "exerciseId": {
+                                "anyOf": [
+                                  {
+                                    "description": "Exercise-definition primary key.",
+                                    "minimum": 1,
+                                    "type": "integer"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "id": {
+                                "description": "Performed exercise-result primary key.",
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "name": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "sets": {
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "minimum": 1,
+                                      "type": "integer"
+                                    },
+                                    "isWarmup": {
+                                      "description": "Always present, including when false.",
+                                      "type": "boolean"
+                                    },
+                                    "rpe": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "volume": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "weight": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "reps": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "timeSeconds": {
+                                      "type": "null"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "isWarmup",
+                                    "rpe",
+                                    "volume",
+                                    "weight",
+                                    "reps",
+                                    "timeSeconds"
+                                  ]
+                                }
+                              },
+                              "timerBased": {
+                                "type": "boolean",
+                                "enum": [
+                                  false
+                                ]
+                              }
+                            },
+                            "required": [
+                              "exerciseId",
+                              "id",
+                              "name",
+                              "sets",
+                              "timerBased"
+                            ]
                           }
-                        },
-                        "required": [
-                          "exerciseId",
-                          "id",
-                          "name",
-                          "sets"
                         ]
                       }
                     }
@@ -4249,306 +5002,103 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "additionalProperties": false,
-                        "type": "object",
-                        "properties": {
-                          "exerciseId": {
-                            "description": "Exercise-definition primary key.",
-                            "minimum": 1,
-                            "type": "integer"
-                          },
-                          "id": {
-                            "description": "Performed exercise-result primary key.",
-                            "minimum": 1,
-                            "type": "integer"
-                          },
-                          "program": {
-                            "anyOf": [
-                              {
-                                "additionalProperties": false,
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "minimum": 1,
-                                    "type": "integer"
-                                  },
-                                  "name": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ]
-                                  }
-                                },
-                                "required": [
-                                  "id",
-                                  "name"
-                                ]
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "routine": {
-                            "anyOf": [
-                              {
-                                "additionalProperties": false,
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "minimum": 1,
-                                    "type": "integer"
-                                  },
-                                  "name": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ]
-                                  }
-                                },
-                                "required": [
-                                  "id",
-                                  "name"
-                                ]
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "sets": {
-                            "type": "array",
-                            "items": {
-                              "additionalProperties": false,
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "minimum": 1,
-                                  "type": "integer"
-                                },
-                                "isWarmup": {
-                                  "type": "boolean"
-                                },
-                                "reps": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "rpe": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "timeSeconds": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "volume": {
-                                  "additionalProperties": false,
-                                  "type": "object",
-                                  "properties": {
-                                    "unit": {
-                                      "description": "Weight display unit. Defaults to lb.",
-                                      "anyOf": [
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "lb"
-                                          ]
-                                        },
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "kg"
-                                          ]
-                                        }
-                                      ],
-                                      "example": "lb"
-                                    },
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "required": [
-                                    "unit",
-                                    "value"
-                                  ]
-                                },
-                                "weight": {
-                                  "additionalProperties": false,
-                                  "type": "object",
-                                  "properties": {
-                                    "unit": {
-                                      "description": "Weight display unit. Defaults to lb.",
-                                      "anyOf": [
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "lb"
-                                          ]
-                                        },
-                                        {
-                                          "type": "string",
-                                          "enum": [
-                                            "kg"
-                                          ]
-                                        }
-                                      ],
-                                      "example": "lb"
-                                    },
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "required": [
-                                    "unit",
-                                    "value"
-                                  ]
-                                }
-                              },
-                              "required": [
-                                "id",
-                                "isWarmup",
-                                "reps",
-                                "rpe",
-                                "timeSeconds",
-                                "volume",
-                                "weight"
-                              ]
-                            }
-                          },
-                          "startedAt": {
-                            "anyOf": [
-                              {
-                                "format": "date-time",
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "statistics": {
+                        "anyOf": [
+                          {
                             "additionalProperties": false,
                             "type": "object",
                             "properties": {
-                              "setCount": {
-                                "minimum": 0,
+                              "exerciseId": {
+                                "description": "Exercise-definition primary key.",
+                                "minimum": 1,
                                 "type": "integer"
                               },
-                              "topReps": {
+                              "id": {
+                                "description": "Performed exercise-result primary key.",
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "program": {
                                 "anyOf": [
                                   {
-                                    "type": "number"
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "minimum": 1,
+                                        "type": "integer"
+                                      },
+                                      "name": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "name"
+                                    ]
                                   },
                                   {
                                     "type": "null"
                                   }
                                 ]
                               },
-                              "topWeight": {
-                                "additionalProperties": false,
-                                "type": "object",
-                                "properties": {
-                                  "unit": {
-                                    "description": "Weight display unit. Defaults to lb.",
-                                    "anyOf": [
-                                      {
-                                        "type": "string",
-                                        "enum": [
-                                          "lb"
-                                        ]
+                              "routine": {
+                                "anyOf": [
+                                  {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "minimum": 1,
+                                        "type": "integer"
                                       },
-                                      {
-                                        "type": "string",
-                                        "enum": [
-                                          "kg"
+                                      "name": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
                                         ]
                                       }
-                                    ],
-                                    "example": "lb"
-                                  },
-                                  "value": {
-                                    "anyOf": [
-                                      {
-                                        "type": "number"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "name"
                                     ]
+                                  },
+                                  {
+                                    "type": "null"
                                   }
-                                },
-                                "required": [
-                                  "unit",
-                                  "value"
                                 ]
                               },
-                              "totalReps": {
-                                "minimum": 0,
-                                "type": "integer"
+                              "startedAt": {
+                                "anyOf": [
+                                  {
+                                    "format": "date-time",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
                               },
-                              "volume": {
+                              "statistics": {
                                 "additionalProperties": false,
                                 "type": "object",
                                 "properties": {
-                                  "unit": {
-                                    "description": "Weight display unit. Defaults to lb.",
-                                    "anyOf": [
-                                      {
-                                        "type": "string",
-                                        "enum": [
-                                          "lb"
-                                        ]
-                                      },
-                                      {
-                                        "type": "string",
-                                        "enum": [
-                                          "kg"
-                                        ]
-                                      }
-                                    ],
-                                    "example": "lb"
+                                  "setCount": {
+                                    "minimum": 0,
+                                    "type": "integer"
                                   },
-                                  "value": {
+                                  "topReps": {
                                     "anyOf": [
                                       {
                                         "type": "number"
@@ -4557,36 +5107,593 @@
                                         "type": "null"
                                       }
                                     ]
+                                  },
+                                  "topWeight": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "properties": {
+                                      "unit": {
+                                        "description": "Weight display unit. Defaults to lb.",
+                                        "examples": [
+                                          "lb"
+                                        ],
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "lb"
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "kg"
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      "value": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "unit",
+                                      "value"
+                                    ]
+                                  },
+                                  "totalReps": {
+                                    "minimum": 0,
+                                    "type": "integer"
+                                  },
+                                  "volume": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "properties": {
+                                      "unit": {
+                                        "description": "Weight display unit. Defaults to lb.",
+                                        "examples": [
+                                          "lb"
+                                        ],
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "lb"
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "kg"
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      "value": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "unit",
+                                      "value"
+                                    ]
                                   }
                                 },
                                 "required": [
-                                  "unit",
-                                  "value"
+                                  "setCount",
+                                  "topReps",
+                                  "topWeight",
+                                  "totalReps",
+                                  "volume"
+                                ]
+                              },
+                              "workoutId": {
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "sets": {
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "minimum": 1,
+                                      "type": "integer"
+                                    },
+                                    "isWarmup": {
+                                      "type": "boolean"
+                                    },
+                                    "rpe": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "volume": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "weight": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "reps": {
+                                      "type": "null"
+                                    },
+                                    "timeSeconds": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "isWarmup",
+                                    "rpe",
+                                    "volume",
+                                    "weight",
+                                    "reps",
+                                    "timeSeconds"
+                                  ]
+                                }
+                              },
+                              "timerBased": {
+                                "type": "boolean",
+                                "enum": [
+                                  true
                                 ]
                               }
                             },
                             "required": [
-                              "setCount",
-                              "topReps",
-                              "topWeight",
-                              "totalReps",
-                              "volume"
+                              "exerciseId",
+                              "id",
+                              "program",
+                              "routine",
+                              "startedAt",
+                              "statistics",
+                              "workoutId",
+                              "sets",
+                              "timerBased"
                             ]
                           },
-                          "workoutId": {
-                            "minimum": 1,
-                            "type": "integer"
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "exerciseId": {
+                                "description": "Exercise-definition primary key.",
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "id": {
+                                "description": "Performed exercise-result primary key.",
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "program": {
+                                "anyOf": [
+                                  {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "minimum": 1,
+                                        "type": "integer"
+                                      },
+                                      "name": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "name"
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "routine": {
+                                "anyOf": [
+                                  {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "minimum": 1,
+                                        "type": "integer"
+                                      },
+                                      "name": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "name"
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "startedAt": {
+                                "anyOf": [
+                                  {
+                                    "format": "date-time",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "statistics": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "setCount": {
+                                    "minimum": 0,
+                                    "type": "integer"
+                                  },
+                                  "topReps": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "topWeight": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "properties": {
+                                      "unit": {
+                                        "description": "Weight display unit. Defaults to lb.",
+                                        "examples": [
+                                          "lb"
+                                        ],
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "lb"
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "kg"
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      "value": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "unit",
+                                      "value"
+                                    ]
+                                  },
+                                  "totalReps": {
+                                    "minimum": 0,
+                                    "type": "integer"
+                                  },
+                                  "volume": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "properties": {
+                                      "unit": {
+                                        "description": "Weight display unit. Defaults to lb.",
+                                        "examples": [
+                                          "lb"
+                                        ],
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "lb"
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "kg"
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      "value": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "unit",
+                                      "value"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "setCount",
+                                  "topReps",
+                                  "topWeight",
+                                  "totalReps",
+                                  "volume"
+                                ]
+                              },
+                              "workoutId": {
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "sets": {
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "minimum": 1,
+                                      "type": "integer"
+                                    },
+                                    "isWarmup": {
+                                      "type": "boolean"
+                                    },
+                                    "rpe": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "volume": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "weight": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "description": "Weight display unit. Defaults to lb.",
+                                          "examples": [
+                                            "lb"
+                                          ],
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "lb"
+                                              ]
+                                            },
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "kg"
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "value"
+                                      ]
+                                    },
+                                    "reps": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "timeSeconds": {
+                                      "type": "null"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "isWarmup",
+                                    "rpe",
+                                    "volume",
+                                    "weight",
+                                    "reps",
+                                    "timeSeconds"
+                                  ]
+                                }
+                              },
+                              "timerBased": {
+                                "type": "boolean",
+                                "enum": [
+                                  false
+                                ]
+                              }
+                            },
+                            "required": [
+                              "exerciseId",
+                              "id",
+                              "program",
+                              "routine",
+                              "startedAt",
+                              "statistics",
+                              "workoutId",
+                              "sets",
+                              "timerBased"
+                            ]
                           }
-                        },
-                        "required": [
-                          "exerciseId",
-                          "id",
-                          "program",
-                          "routine",
-                          "sets",
-                          "startedAt",
-                          "statistics",
-                          "workoutId"
                         ]
                       }
                     },

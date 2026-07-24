@@ -80,20 +80,11 @@ function toWorkoutSummary(row: ApiWorkoutListRow) {
 function toWorkoutDetail(row: ApiWorkoutDetailRow, unit: WeightUnit) {
   return {
     ...toWorkoutSummary(row),
-    exercises: row.exercises.map((exercise) => ({
-      exerciseId: exercise.exerciseId,
-      id: exercise.id,
-      name: formatExerciseDisplayName(exercise.name, exercise.isUserCreated),
-      sets: exercise.sets.map((set) => ({
-        id: set.id,
-        isWarmup: set.isWarmup,
-        reps: set.reps,
-        rpe: set.rpe,
-        timeSeconds: set.timeSeconds,
-        volume: {unit, value: convertKgToApiWeight(set.volumeKg, unit)},
-        weight: {unit, value: convertKgToApiWeight(set.weightKg, unit)},
-      })),
-    })),
+    exercises: row.exercises.map((exercise) => {
+      const base = {exerciseId: exercise.exerciseId, id: exercise.id, name: formatExerciseDisplayName(exercise.name, exercise.isUserCreated)}
+      if (exercise.timerBased) return {...base, sets: exercise.sets.map((set) => ({id: set.id, isWarmup: set.isWarmup, reps: null, rpe: set.rpe, timeSeconds: set.timeSeconds!, volume: {unit, value: convertKgToApiWeight(set.volumeKg, unit)}, weight: {unit, value: convertKgToApiWeight(set.weightKg, unit)}})), timerBased: true as const}
+      return {...base, sets: exercise.sets.map((set) => ({id: set.id, isWarmup: set.isWarmup, reps: set.reps, rpe: set.rpe, timeSeconds: null, volume: {unit, value: convertKgToApiWeight(set.volumeKg, unit)}, weight: {unit, value: convertKgToApiWeight(set.weightKg, unit)}})), timerBased: false as const}
+    }),
   }
 }
 
